@@ -40,3 +40,5 @@ out/
 ## Environment Variables File
 .env
 
+## log
+.logs
