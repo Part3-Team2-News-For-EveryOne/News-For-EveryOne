@@ -31,7 +31,7 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/users", "/api/users/login").permitAll()  //회원가입, 로그인은 허용 경로
+            .requestMatchers("/", "/index.html", "/favicon.ico", "/assets/index-*.js", "/assets/index-*.css", "/api/users", "/api/users/login").permitAll()  //회원가입, 로그인은 허용 경로
             .anyRequest().authenticated())  //허용 경로를 제외한 모든 요청은 인증 필요
         .userDetailsService(userDetailService)
         .build();
