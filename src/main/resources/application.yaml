@@ -17,6 +17,12 @@ spring:
   sql:
     init:
       mode: never
+  # 이거 어찌할꼬
+  batch:
+    job:
+      enabled: true
+    jdbc:
+      initialize-schema: always
 
 
 logging:
