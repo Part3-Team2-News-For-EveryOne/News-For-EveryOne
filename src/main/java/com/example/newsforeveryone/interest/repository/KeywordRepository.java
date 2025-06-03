@@ -1,9 +1,9 @@
 package com.example.newsforeveryone.interest.repository;
 
-import com.example.newsforeveryone.interest.entity.Interest;
+import com.example.newsforeveryone.interest.entity.Keyword;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface InterestRepository extends JpaRepository<Interest, Long> {
+public interface KeywordRepository extends JpaRepository<Keyword, Long> {
 }
