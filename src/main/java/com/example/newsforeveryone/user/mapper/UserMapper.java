@@ -18,11 +18,11 @@ public class UserMapper {
     );
   }
 
-  public User toEntity(UserSignupRequest request){
+  public User toEntity(UserSignupRequest request, String encodedPassword) {
     return User.builder()
         .email(request.email())
         .nickname(request.nickname())
-        .password(request.password())
+        .password(encodedPassword)
         .build();
   }
 
@@ -31,5 +31,5 @@ public class UserMapper {
         .map(this::toResponse)
         .toList();
   }
-
 }
+

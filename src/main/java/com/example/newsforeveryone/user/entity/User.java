@@ -25,6 +25,9 @@ public class User extends BaseEntity {
   @Column(nullable = false)
   private String password;
 
+  @Column(name = "deleted_at")
+  private Instant deletedAt;
+
   @Builder
   public User(String email, String nickname, String password) {
     this.email = email;
@@ -35,5 +38,13 @@ public class User extends BaseEntity {
   public void updateNickname(String nickname) {
     this.nickname = nickname;
   }
+
+  public void markAsDeleted() {
+    this.deletedAt = Instant.now();
+  }
+
+//  public boolean isDeleted() {
+//    return deletedAt != null;
+//  }
 
 }
