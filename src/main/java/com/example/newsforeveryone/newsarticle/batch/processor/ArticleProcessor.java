@@ -12,7 +12,7 @@ public class ArticleProcessor implements ItemProcessor<RssRawArticleDto, NewsArt
   @Override
   public NewsArticle process(RssRawArticleDto item) {
     return NewsArticle.builder()
-        .sourceName("조선일보")
+        .sourceName(item.sourceName())
         .title(item.title())
         .link(item.link())
         .summary(item.summary())

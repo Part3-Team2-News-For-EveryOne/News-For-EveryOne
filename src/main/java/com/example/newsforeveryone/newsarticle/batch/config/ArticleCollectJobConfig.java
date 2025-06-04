@@ -15,6 +15,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
@@ -43,6 +44,8 @@ public class ArticleCollectJobConfig {
         .reader(reader)
         .processor(processor)
         .writer(writer)
+        .faultTolerant()
+        .skip(DataIntegrityViolationException.class)
         .build();
   }
 }

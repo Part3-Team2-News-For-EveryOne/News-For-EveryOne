@@ -2,27 +2,36 @@ package com.example.newsforeveryone.newsarticle.batch.reader;
 
 import com.example.newsforeveryone.newsarticle.batch.dto.RssRawArticleDto;
 import com.example.newsforeveryone.newsarticle.batch.parser.RssParser;
-import jakarta.annotation.PostConstruct;
+import com.example.newsforeveryone.newsarticle.batch.parser.RssParserRegistry;
+import com.example.newsforeveryone.newsarticle.repository.NewsArticleRepository;
+import com.example.newsforeveryone.newsarticle.repository.SourceRepository;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.annotation.BeforeStep;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.stereotype.Component;
 
 @Component
+@StepScope
 @RequiredArgsConstructor
 public class RssArticleItemReader implements ItemReader<RssRawArticleDto> {
 
-  // 조선일보 정치 https://www.chosun.com/arc/outboundfeeds/rss/category/politics/?outputType=xml
-
-  // 아마도 필요한 Rss파서들을 가지고 있어야 함 List<RssParser>
-  private final RssParser rssParser;
+  private final SourceRepository sourceRepository;
+  private final RssParserRegistry parserRegistry;
+  private final NewsArticleRepository newsArticleRepository;
 
   private Iterator<RssRawArticleDto> iterator;
 
-  @PostConstruct
-  public void init() {
-    List<RssRawArticleDto> articles = fetchRss(); // RSS 수집 로직
+  @BeforeStep
+  public void beforeStep(StepExecution stepExecution) {
+    List<RssRawArticleDto> articles = fetchRss();
     this.iterator = articles.iterator();
   }
 
@@ -32,12 +41,41 @@ public class RssArticleItemReader implements ItemReader<RssRawArticleDto> {
   }
 
 
-  // 상엽
   private List<RssRawArticleDto> fetchRss() {
-    // URL 읽기 -> 알맞은 파서가 있으면 파싱 → DTO 리스트로 변환
-    String RssUrl = "https://www.chosun.com/arc/outboundfeeds/rss/category/politics/?outputType=xml";
-    return rssParser.parse(RssUrl);
+    List<String> feedUrls = sourceRepository.findAllFeedUrl()
+        .orElseThrow(() -> new IllegalArgumentException("RSS URL이 존재하지 않습니다."));
 
+    List<RssRawArticleDto> allArticles = new ArrayList<>();
+
+    for (String feedUrl : feedUrls) {
+      try {
+        RssParser parser = parserRegistry.getParser(feedUrl);
+        List<RssRawArticleDto> article = parser.parse(feedUrl);
+        allArticles.addAll(article);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return filterDuplicatedArticles(allArticles);
+  }
+
+  private List<RssRawArticleDto> filterDuplicatedArticles(List<RssRawArticleDto> unfilteredArticles) {
+    if (unfilteredArticles.isEmpty()) {
+      return new ArrayList<>();
+    }
+
+    Set<String> unfilteredArticleLinks = unfilteredArticles.stream()
+        .map(RssRawArticleDto::link)
+        .collect(Collectors.toSet());
+
+    Set<String> existingLinks = new HashSet<>(newsArticleRepository.findLinksByLinkIn(unfilteredArticleLinks));
+
+    List<RssRawArticleDto> filteredArticles = unfilteredArticles.stream()
+        .filter(article -> !existingLinks.contains(article.link()))
+        .distinct()
+        .toList();
+
+    return filteredArticles;
   }
 }
 
