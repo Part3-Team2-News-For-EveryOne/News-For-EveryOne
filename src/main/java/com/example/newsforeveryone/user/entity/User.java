@@ -1,8 +1,12 @@
 package com.example.newsforeveryone.user.entity;
 
-import com.example.newsforeveryone.common.BaseEntity;
+import com.example.newsforeveryone.common.entity.SoftDeletableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import lombok.AccessLevel;
@@ -14,7 +18,13 @@ import lombok.NoArgsConstructor;
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User extends BaseEntity {
+public class User extends SoftDeletableEntity {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq_gen")
+  @SequenceGenerator(name = "user_seq_gen", sequenceName = "user_id_seq", allocationSize = 50)
+  private Long id;
+
 
   @Column(nullable = false, unique = true)
   private String email;
@@ -24,9 +34,6 @@ public class User extends BaseEntity {
 
   @Column(nullable = false)
   private String password;
-
-  @Column(name = "deleted_at")
-  private Instant deletedAt;
 
   @Builder
   public User(String email, String nickname, String password) {
@@ -40,11 +47,7 @@ public class User extends BaseEntity {
   }
 
   public void markAsDeleted() {
-    this.deletedAt = Instant.now();
+    this.setDeletedAt(Instant.now());
   }
-
-//  public boolean isDeleted() {
-//    return deletedAt != null;
-//  }
 
 }

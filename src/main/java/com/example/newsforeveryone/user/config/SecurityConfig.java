@@ -1,6 +1,6 @@
 package com.example.newsforeveryone.user.config;
 
-import com.example.newsforeveryone.user.service.CustomUserDetailService;
+import com.example.newsforeveryone.user.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private final CustomUserDetailService userDetailService;
+  private final CustomUserDetailsService userDetailService;
 
   @Bean
   public PasswordEncoder passwordEncoder() {
