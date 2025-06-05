@@ -2,7 +2,6 @@ package com.example.newsforeveryone.interest.entity;
 
 import com.example.newsforeveryone.common.entity.BaseEntity;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
-import com.example.newsforeveryone.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

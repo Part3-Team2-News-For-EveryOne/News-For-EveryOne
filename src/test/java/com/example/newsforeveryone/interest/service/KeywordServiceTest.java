@@ -1,9 +1,11 @@
-package com.example.newsforeveryone.interest.service.impl;
+package com.example.newsforeveryone.interest.service;
 
 import com.example.newsforeveryone.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.repository.KeywordRepository;
+import com.example.newsforeveryone.interest.service.impl.KeywordService;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +33,13 @@ class KeywordServiceTest extends IntegrationTestSupport {
         List<Keyword> registeredKeywords = keywordService.registerKeyword(keywords, 0.8);
 
         // then
-        Assertions.assertThat(registeredKeywords)
-                .extracting(Keyword::getName)
-                .containsExactlyInAnyOrder("대한민국서울이화교중랑천산책로", "중랑천", "이화교");
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(keywordRepository.findAll()).hasSize(3);
+            softly.assertThat(registeredKeywords)
+                    .extracting(Keyword::getName)
+                    .containsExactlyInAnyOrder("대한민국서울이화교중랑천산책로", "중랑천", "이화교");
+
+        });
     }
 
     @Transactional
