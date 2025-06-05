@@ -8,7 +8,7 @@ import java.util.List;
 
 public record InterestRegisterRequest(
         @NotBlank
-        @JsonProperty("name")
+        @JsonProperty("interestName")
         String name,
 
         @NotEmpty

@@ -16,20 +16,21 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/interests")
 public class InterestController {
 
+    private static final double SIMILARITY_THRESHOLD = 0.8;
     private final InterestService interestService;
-
-    @GetMapping
-    public ResponseEntity<CursorPageInterestResponse<InterestResult>> getAllInterests(@Valid @RequestBody InterestSearchRequest interestSearchRequest,  @RequestHeader("Monew-Request-User-ID") Long userId) {
-        CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest);
-
-        return ResponseEntity.ok(interests);
-    }
 
     @PostMapping
     public ResponseEntity<InterestResult> registerInterest(@Valid @RequestBody InterestRegisterRequest interestRegisterRequest) {
-        InterestResult interestResult = interestService.registerInterest(interestRegisterRequest);
+        InterestResult interestResult = interestService.registerInterest(interestRegisterRequest, SIMILARITY_THRESHOLD);
 
         return ResponseEntity.ok(interestResult);
+    }
+
+    @GetMapping
+    public ResponseEntity<CursorPageInterestResponse<InterestResult>> getAllInterests(@Valid @RequestBody InterestSearchRequest interestSearchRequest, @RequestHeader("Monew-Request-User-ID") Long userId) {
+        CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest);
+
+        return ResponseEntity.ok(interests);
     }
 
     @PostMapping("/{interestId}/subscriptions")
@@ -59,7 +60,7 @@ public class InterestController {
 
     @PatchMapping("/{interestId}")
     public ResponseEntity<InterestResult> updateInterest(@PathVariable(name = "interestId") Long interestId) {
-        InterestResult interestResult = interestService.updateInterest(interestId);
+        InterestResult interestResult = interestService.updateKeywordInInterest(interestId);
 
         return ResponseEntity.ok(interestResult);
     }

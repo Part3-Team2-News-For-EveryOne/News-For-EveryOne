@@ -17,7 +17,7 @@ public class Interest extends BaseEntity {
     @SequenceGenerator(name = "interest_seq_gen", sequenceName = "interest_id_seq", allocationSize = 50)
     private Long id;
 
-    @JoinColumn(name = "name", nullable = false, unique = true)
+    @JoinColumn(name = "interestName", nullable = false, unique = true)
     private String name;
 
     public Interest(String name) {

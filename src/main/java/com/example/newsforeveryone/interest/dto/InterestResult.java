@@ -1,5 +1,7 @@
 package com.example.newsforeveryone.interest.dto;
 
+import com.example.newsforeveryone.interest.entity.Interest;
+import com.example.newsforeveryone.interest.entity.Keyword;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
@@ -8,12 +10,32 @@ public record InterestResult(
         @JsonProperty("id")
         long id,
         @JsonProperty("name")
-        String name,
+        String interestName,
         @JsonProperty("keywords")
         List<String> keywords,
         @JsonProperty("subscriberCount")
-        Integer subscriberCount,
+        int subscriberCount,
         @JsonProperty("subscribedByMe")
-        boolean subscribedByMe
+        Boolean subscribedByMe
 ) {
+
+    public static InterestResult fromEntity(
+            Interest interest,
+            List<Keyword> keywords,
+            int subscriberCount,
+            Boolean subscribedByMe
+    ) {
+        List<String> convertedKeywords = keywords.stream()
+                .map(Keyword::getName)
+                .toList();
+
+        return new InterestResult(
+                interest.getId(),
+                interest.getName(),
+                convertedKeywords,
+                subscriberCount,
+                subscribedByMe
+        );
+    }
+
 }
