@@ -8,22 +8,28 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.time.Instant;
+import java.util.Set;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.Formula;
 
 @Getter
 @ToString
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "news_article")
 @Entity
 public class NewsArticle extends SoftDeletableEntity {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "interest_seq_gen")
-  @SequenceGenerator(name = "interest_seq_gen", sequenceName = "interest_id_seq", allocationSize = 50)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "news_article_seq_gen")
+  @SequenceGenerator(name = "news_article_seq_gen", sequenceName = "news_article_id_seq", allocationSize = 50)
   private Long id;
 
   @Column(name = "source_name", length = 500, nullable = false)
@@ -38,10 +44,15 @@ public class NewsArticle extends SoftDeletableEntity {
   @Column(name = "summary")
   private String summary;
 
-  @Formula("(SELECT COUNT(*) FROM article_view av WHERE av.article_id = id)") // N + 1!!!!
+//  @Formula("(SELECT COUNT(*) FROM article_view av WHERE av.article_id = id)") // N + 1!!!!
+  @Transient
   private int viewCount;
 
   @Column(name = "published_at", nullable = false)
   private Instant publishedAt;
+
+  @Transient
+  private Set<Long> interestIds;
+
 
 }

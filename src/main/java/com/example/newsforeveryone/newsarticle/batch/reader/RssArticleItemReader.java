@@ -17,6 +17,7 @@ import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 @Component
 @StepScope
@@ -26,7 +27,8 @@ public class RssArticleItemReader implements ItemReader<RssRawArticleDto> {
   private final SourceRepository sourceRepository;
   private final RssParserRegistry parserRegistry;
   private final NewsArticleRepository newsArticleRepository;
-
+  // 새로 추가
+  private final RestTemplate restTemplate;
   private Iterator<RssRawArticleDto> iterator;
 
   @BeforeStep
@@ -50,10 +52,10 @@ public class RssArticleItemReader implements ItemReader<RssRawArticleDto> {
     for (String feedUrl : feedUrls) {
       try {
         RssParser parser = parserRegistry.getParser(feedUrl);
-        List<RssRawArticleDto> article = parser.parse(feedUrl);
-        allArticles.addAll(article);
+        List<RssRawArticleDto> articleDtos = parser.parse(feedUrl, restTemplate);
+        allArticles.addAll(articleDtos);
       } catch (Exception e) {
-        throw new RuntimeException(e);
+        throw new RuntimeException("Rss Parsing 중 오류 발생: " + feedUrl, e);
       }
     }
     return filterDuplicatedArticles(allArticles);

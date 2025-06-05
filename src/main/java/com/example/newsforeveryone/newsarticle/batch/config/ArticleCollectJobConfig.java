@@ -34,13 +34,13 @@ public class ArticleCollectJobConfig {
   }
   
   @Bean
-  public Step CollectRssStep(
+  public Step collectRswsStep(
       ItemReader<RssRawArticleDto> reader, //ArticleDto로 읽어와지는건가?
       ItemProcessor<RssRawArticleDto, NewsArticle> processor,
       ItemWriter<NewsArticle> writer
   ) {
     return new StepBuilder("collectRssStep", jobRepository)
-        .<RssRawArticleDto, NewsArticle>chunk(10, transactionManager)
+        .<RssRawArticleDto, NewsArticle>chunk(50, transactionManager)
         .reader(reader)
         .processor(processor)
         .writer(writer)
