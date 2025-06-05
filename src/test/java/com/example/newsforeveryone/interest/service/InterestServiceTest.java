@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-class InterestServiceImplTest extends IntegrationTestSupport {
+class InterestServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private InterestRepository interestRepository;
@@ -43,11 +43,8 @@ class InterestServiceImplTest extends IntegrationTestSupport {
         // then
         SoftAssertions.assertSoftly(softly -> {
             softly.assertThat(interestResult)
-                    .extracting(InterestResult::interestName)
-                    .isEqualTo(interestName);
-            softly.assertThat(interestResult)
-                    .extracting(InterestResult::keywords)
-                    .isEqualTo(List.of(keyword));
+                    .extracting(InterestResult::interestName, InterestResult::subscriberCount, InterestResult::subscribedByMe, InterestResult::keywords)
+                    .containsExactlyInAnyOrder(interestName, 0, null, List.of(keyword));
         });
     }
 

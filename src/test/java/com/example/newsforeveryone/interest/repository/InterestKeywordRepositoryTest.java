@@ -3,7 +3,7 @@ package com.example.newsforeveryone.interest.repository;
 import com.example.newsforeveryone.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
-import com.example.newsforeveryone.interest.entity.InterestKeywordId;
+import com.example.newsforeveryone.interest.entity.id.InterestKeywordId;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Disabled;

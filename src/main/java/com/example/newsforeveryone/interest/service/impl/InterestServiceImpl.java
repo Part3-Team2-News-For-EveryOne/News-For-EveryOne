@@ -10,6 +10,7 @@ import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import com.example.newsforeveryone.interest.repository.InterestRepository;
+import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
 import com.example.newsforeveryone.interest.service.InterestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,9 +22,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class InterestServiceImpl implements InterestService {
 
-    private final InterestRepository interestRepository;
     private final KeywordService keywordService;
+    private final InterestRepository interestRepository;
     private final InterestKeywordRepository interestKeywordRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     @Override
     public InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest, double threshold) {

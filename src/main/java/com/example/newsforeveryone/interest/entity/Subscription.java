@@ -1,0 +1,30 @@
+package com.example.newsforeveryone.interest.entity;
+
+import com.example.newsforeveryone.common.entity.BaseEntity;
+import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
+import com.example.newsforeveryone.user.entity.User;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Entity
+@Table(name = "subscription")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Subscription extends BaseEntity {
+
+    @EmbeddedId
+    private SubscriptionId id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @MapsId("interestId")
+    @JoinColumn(name = "interest_id", nullable = false)
+    private Interest interest;
+
+    public Subscription(Interest interest, Long userId) {
+        this.interest = interest;
+        this.id = new SubscriptionId(interest.getId(), userId);
+    }
+
+}
