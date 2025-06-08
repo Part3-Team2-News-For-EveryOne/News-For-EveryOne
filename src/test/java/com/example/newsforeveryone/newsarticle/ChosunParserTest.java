@@ -71,7 +71,7 @@ class ChosunParserTest {
     when(mockResource.getInputStream()).thenReturn(inputStream);
 
     // When
-    List<RssRawArticleDto> articles = chosunParser.parse("http://test.url/rss");
+    List<RssRawArticleDto> articles = chosunParser.parse("https://test.url/rss", restTemplate);
 
     // Then
     assertNotNull(articles);
@@ -122,7 +122,7 @@ class ChosunParserTest {
     when(mockResource.getInputStream()).thenReturn(inputStream);
 
     // When
-    List<RssRawArticleDto> articles = chosunParser.parse("http://test.url/rss");
+    List<RssRawArticleDto> articles = chosunParser.parse("https://test.url/rss", restTemplate);
 
     // Then
     assertNotNull(articles);

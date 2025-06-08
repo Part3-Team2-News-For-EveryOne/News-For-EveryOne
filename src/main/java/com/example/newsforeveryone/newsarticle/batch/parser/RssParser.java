@@ -35,6 +35,7 @@ public interface RssParser {
     }
   }
 
+  // catch문을 대신 함
   @SneakyThrows
   default Document fetchDocument(String feedUrl, RestTemplate restTemplate) {
     Resource resource = restTemplate.getForObject(feedUrl, Resource.class);
