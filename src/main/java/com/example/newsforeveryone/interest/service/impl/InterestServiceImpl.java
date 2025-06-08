@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -47,6 +48,22 @@ public class InterestServiceImpl implements InterestService {
 
     @Override
     public CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest) {
+        Map<Interest, List<String>> interestListMap = interestKeywordRepository.searchByWord(
+                interestSearchRequest.keyword(),
+                interestSearchRequest.orderBy(),
+                interestSearchRequest.direction(),
+                interestSearchRequest.cursor(),
+                interestSearchRequest.after(),
+                interestSearchRequest.limit()
+        );
+
+        // 매퍼로 넘길까?
+        // 연결 테이블에서는 어떻게 하나 지켜보자 내가 생각했을떄는 join으로 불러온다음, 검사할 것 같긴함데
+
+        // word가 속하는 interest와 interest의 키워드 반환
+        // 키워드에서 interest 찾고 다시 검색
+        // interest에서 키워드 바로 찾기
+
         return null;
     }
 
@@ -67,4 +84,5 @@ public class InterestServiceImpl implements InterestService {
     public InterestResult updateKeywordInInterest(long interestId) {
         return null;
     }
+
 }
