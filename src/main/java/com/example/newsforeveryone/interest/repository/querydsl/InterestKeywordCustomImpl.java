@@ -6,10 +6,14 @@ import com.example.newsforeveryone.interest.entity.QInterestKeyword;
 import com.example.newsforeveryone.interest.entity.QKeyword;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.ComparableExpressionBase;
+import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,73 +39,99 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
         QInterest interest = QInterest.interest;
         QKeyword keyword = QKeyword.keyword;
 
-        List<Interest> interests = queryFactory
-                .selectDistinct(interest)
+        // 키워드에서
+        List<Long> keywordIds = queryFactory
+                .select(keyword.id)
+                .from(keyword)
+                .where(keyword.name.containsIgnoreCase(word))
+                .fetch();
+        // InterestKeyword에서 가져오기
+        List<Long> keywordInterestIds = queryFactory
+                .selectDistinct(interestKeyword.interest.id)
                 .from(interestKeyword)
-                .join(interestKeyword.interest, interest)
-                .join(interestKeyword.keyword, keyword)
-                .where(interest.name.containsIgnoreCase(word)
-                                .or(keyword.name.containsIgnoreCase(word))
-//                        .or() // 어디 커서를 봐야되지? 아 ㄹㅇ 잠시만..
-//                        .or()
-                )
-                .orderBy(getPrimaryOrder(orderBy, direction, interest),
-                        getSecondaryOrder(direction, interest))
-                .limit(limit)
+                .where(interestKeyword.keyword.id.in(keywordIds))
                 .fetch();
 
-        List<Long> distinctInterestIds = interests.stream()
-                .map(Interest::getId)
-                .distinct()
-                .toList();
+        // Interest에서 가져오기
+        List<Long> targetInterestIds = queryFactory
+                .select(interest.id)
+                .from(interest)
+                .where(interest.id.in(keywordInterestIds)
+                        .or(interest.name.containsIgnoreCase(word))
+                        .and(cursorCondition(cursor, after, orderBy, direction, interest)))
+                .orderBy(
+                        getPrimaryOrder(direction, orderBy, interest),
+                        getSecondaryOrder(direction, interest)
+                )
+                .limit(limit)
+                .fetch();
 
         List<Tuple> result = queryFactory
                 .select(interest, keyword.name)
                 .from(interestKeyword)
                 .join(interestKeyword.interest, interest)
                 .join(interestKeyword.keyword, keyword)
-                .where(interest.id.in(distinctInterestIds))
+                .where(interest.id.in(targetInterestIds))
                 .fetch();
 
         return result.stream()
-                .map(tuple -> Map.entry(
-                        Optional.ofNullable(tuple.get(interest)),
-                        Objects.requireNonNull(tuple.get(keyword.name))
-                ))
-                .filter(entry -> entry.getKey().isPresent())
+                .filter(tuple -> tuple.get(interest) != null && tuple.get(keyword.name) != null)
                 .collect(Collectors.groupingBy(
-                        entry -> entry.getKey().get(),
-                        Collectors.mapping(Map.Entry::getValue, Collectors.toList())
+                        tuple -> tuple.get(interest),
+                        Collectors.mapping(tuple -> tuple.get(keyword.name), Collectors.toList())
                 ));
     }
 
-    private OrderSpecifier<?> getPrimaryOrder(String orderBy, String direction, QInterest interest) {
-        boolean isDesc = direction.equalsIgnoreCase("desc");
+    // null일떄 처리필요
+    private BooleanExpression cursorCondition(String cursor, String after, String orderBy, String direction, QInterest interest) {
+        if (after != null && !after.isBlank() && cursor != null && !cursor.isBlank()) {
 
-        if (orderBy.equals("name")) {
-            if (isDesc) {
-                return interest.name.desc();
+            if (direction.equalsIgnoreCase("asc")) {
+                if (orderBy.equals("subscriberCount")) {
+                    return interest.subscriberCount.gt(Integer.valueOf(cursor))
+                            .and(interest.createdAt.gt(Instant.parse(after)));
+                } else {
+                    return interest.name.gt(cursor)
+                            .and(interest.createdAt.gt(Instant.parse(after)));
+                }
             }
 
-            return interest.name.asc();
+
+            if (orderBy.equals("subscriberCount")) {
+                return interest.subscriberCount.lt(Integer.valueOf(cursor))
+                        .and(interest.createdAt.lt(Instant.parse(after)));
+            }
+            return interest.name.lt(cursor)
+                    .and(interest.createdAt.lt(Instant.parse(after)));
         }
 
-//        if (orderBy.equals("subscriberCount")) {
-//            if(isDesc){
-//                return
-//            }
-//        }
 
+        return cursor != null ? interest.name.gt(cursor) : null;
+    }
+
+
+    private OrderSpecifier<?> getPrimaryOrder(String orderBy, String direction, QInterest interest) {
+        boolean isAsc = direction.equalsIgnoreCase("asc");
+        if (orderBy.equals("subscriberCount")) {
+            if (isAsc) {
+                return interest.subscriberCount.asc();
+            }
+            return interest.subscriberCount.desc();
+        }
+
+        if (isAsc) {
+            return interest.name.asc();
+        }
         return interest.name.desc();
     }
 
     private OrderSpecifier<?> getSecondaryOrder(String direction, QInterest interest) {
-        boolean isDesc = direction.equalsIgnoreCase("desc");
-        if (isDesc) {
-            return interest.createdAt.desc();
+        boolean isAsc = direction.equalsIgnoreCase("asc");
+        if (isAsc) {
+            return interest.createdAt.asc();
         }
 
-        return interest.name.asc();
+        return interest.createdAt.desc();
     }
 
 }

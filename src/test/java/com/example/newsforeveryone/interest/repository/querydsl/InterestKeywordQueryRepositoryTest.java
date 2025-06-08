@@ -28,7 +28,7 @@ class InterestKeywordQueryRepositoryTest extends IntegrationTestSupport {
     private KeywordRepository keywordRepository;
 
     @Transactional
-    @DisplayName("~이면, ~이다")
+    @DisplayName("커서 조건으로 호출을 하면, 요청된 양의 데이터를 가져옵니다.")
     @Test
     void test_arr() {
         // given
@@ -44,10 +44,9 @@ class InterestKeywordQueryRepositoryTest extends IntegrationTestSupport {
         // then
         Assertions.assertThat(interestListMap.entrySet())
                 .extracting(interestListEntry -> interestListEntry.getKey().getName(), Map.Entry::getValue)
-                .containsExactlyInAnyOrder(
+                .containsExactly(
                         Tuple.tuple("러닝", List.of("면목천", "면목")),
                         Tuple.tuple("러닝머신", List.of("중랑천", "중랑"))
-//                            Tuple.tuple("천", List.of("군산", "서울"))
                 );
     }
 
