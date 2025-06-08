@@ -51,7 +51,7 @@ public class InterestController {
 
     @DeleteMapping("/{interestId}")
     public ResponseEntity<Void> deleteInterest(@PathVariable(name = "interestId") Long interestId) {
-        interestService.deleteInterestById(interestId);
+        interestService.deleteInterest(interestId);
 
         return ResponseEntity
                 .noContent()

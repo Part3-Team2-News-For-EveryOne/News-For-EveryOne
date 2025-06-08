@@ -107,17 +107,6 @@ class InterestServiceTest extends IntegrationTestSupport {
         });
     }
 
-    private Interest saveInterestAndKeyword(String interestName, List<String> keywordNames) {
-        Interest savedNextInterest = interestRepository.save(new Interest(interestName));
-        List<Keyword> keywords = keywordNames.stream().map(Keyword::new).toList();
-        List<Keyword> savedNextKeywords = keywordRepository.saveAll(keywords);
-        List<InterestKeyword> nextInterestKeywords = savedNextKeywords.stream()
-                .map(keyword -> new InterestKeyword(savedNextInterest, keyword))
-                .toList();
-        interestKeywordRepository.saveAll(nextInterestKeywords);
-        return savedNextInterest;
-    }
-
     @Transactional
     @DisplayName("사용자가 관심사를 구독합니다.")
     @Test
@@ -202,14 +191,49 @@ class InterestServiceTest extends IntegrationTestSupport {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Transactional
+    @DisplayName("관심사를 삭제합니다.")
     @Test
-    void deleteInterestById() {
+    void deleteInterest() {
+        // given
+        User savedUser = userRepository.save(new User("", "", ""));
+        Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
+        interestService.subscribeInterest(savedInterest.getId(), savedUser.getId());
 
+        // when
+        interestService.deleteInterest(savedInterest.getId());
+
+        // then
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(interestRepository.findById(savedInterest.getId())).isEmpty();
+            softly.assertThat(interestKeywordRepository.findByInterest_Id(savedInterest.getId())).isEmpty();
+            softly.assertThat(subscriptionRepository.findById(new SubscriptionId(savedInterest.getId(), savedUser.getId()))).isEmpty();
+        });
+    }
+
+    @Transactional
+    @Test
+    void deleteInterest_NoInterestException() {
+        // when & then
+        Assertions.assertThatThrownBy(() -> interestService.deleteInterest(-1L))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void updateInterest() {
 
+    }
+
+    private Interest saveInterestAndKeyword(String interestName, List<String> keywordNames) {
+        Interest savedNextInterest = interestRepository.save(new Interest(interestName));
+        List<Keyword> keywords = keywordNames.stream().map(Keyword::new).toList();
+        List<Keyword> savedNextKeywords = keywordRepository.saveAll(keywords);
+        List<InterestKeyword> nextInterestKeywords = savedNextKeywords.stream()
+                .map(keyword -> new InterestKeyword(savedNextInterest, keyword))
+                .toList();
+        interestKeywordRepository.saveAll(nextInterestKeywords);
+
+        return savedNextInterest;
     }
 
 }

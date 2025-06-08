@@ -77,6 +77,7 @@ public class InterestServiceImpl implements InterestService {
                 .orElseThrow(() -> new IllegalArgumentException(""));
         Subscription saveSubscription = subscriptionRepository.save(new Subscription(interest, user.getId()));
         interest.addSubscriberCount(1);
+        interestRepository.save(interest);
 
         List<InterestKeyword> interestKeywords = interestKeywordRepository.findByInterest_Id(interestId);
         List<String> keywords = interestKeywords.stream()
@@ -99,9 +100,15 @@ public class InterestServiceImpl implements InterestService {
         subscriptionRepository.deleteById(new SubscriptionId(interestId, userId));
     }
 
+    @Transactional
     @Override
-    public void deleteInterestById(long interestId) {
-
+    public void deleteInterest(long interestId) {
+        if (!interestRepository.existsById(interestId)) {
+            throw new IllegalArgumentException("");
+        }
+        interestKeywordRepository.deleteByInterest_Id(interestId);
+        subscriptionRepository.deleteByInterest_Id(interestId);
+        interestRepository.deleteById(interestId);
     }
 
     @Override

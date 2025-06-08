@@ -13,4 +13,6 @@ public interface InterestKeywordRepository extends JpaRepository<InterestKeyword
 
     List<InterestKeyword> findByInterest_Id(Long interestId);
 
+    void deleteByInterest_Id(Long interestId);
+
 }

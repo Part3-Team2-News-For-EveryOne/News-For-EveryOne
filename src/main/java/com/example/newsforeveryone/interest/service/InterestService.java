@@ -16,7 +16,7 @@ public interface InterestService {
 
     void unsubscribeInterest(long interestId, long userId);
 
-    void deleteInterestById(long interestId);
+    void deleteInterest(long interestId);
 
     InterestResult updateKeywordInInterest(long interestId);
 
