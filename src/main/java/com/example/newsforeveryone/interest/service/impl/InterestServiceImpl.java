@@ -9,6 +9,7 @@ import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.Subscription;
+import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
@@ -17,6 +18,7 @@ import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ public class InterestServiceImpl implements InterestService {
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
 
+    @Transactional
     @Override
     public InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest, double threshold) {
         Optional<Double> interestSimilarity = interestRepository.findMaxSimilarity(interestRegisterRequest.name());
@@ -65,6 +68,7 @@ public class InterestServiceImpl implements InterestService {
         return null;
     }
 
+    @Transactional
     @Override
     public SubscriptionResult subscribeInterest(long interestId, long userId) {
         User user = userRepository.findById(userId)
@@ -83,13 +87,21 @@ public class InterestServiceImpl implements InterestService {
         return SubscriptionResult.fromEntity(saveSubscription, keywords);
     }
 
+    @Transactional
     @Override
     public void unsubscribeInterest(long interestId, long userId) {
-
+        if (!userRepository.existsById(userId)) {
+            throw new IllegalArgumentException("");
+        }
+        if (!interestRepository.existsById(interestId)) {
+            throw new IllegalArgumentException("");
+        }
+        subscriptionRepository.deleteById(new SubscriptionId(interestId, userId));
     }
 
     @Override
     public void deleteInterestById(long interestId) {
+
     }
 
     @Override

@@ -13,6 +13,7 @@ import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.KeywordRepository;
+import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import org.assertj.core.api.Assertions;
@@ -33,6 +34,8 @@ class InterestServiceTest extends IntegrationTestSupport {
     private KeywordRepository keywordRepository;
     @Autowired
     private InterestKeywordRepository interestKeywordRepository;
+    @Autowired
+    private SubscriptionRepository subscriptionRepository;
     @Autowired
     private InterestService interestService;
     @Autowired
@@ -159,6 +162,7 @@ class InterestServiceTest extends IntegrationTestSupport {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Transactional
     @DisplayName("관심사 구독을 취소합니다.")
     @Test
     void unsubscribeInterest() {
@@ -171,8 +175,31 @@ class InterestServiceTest extends IntegrationTestSupport {
         interestService.unsubscribeInterest(savedInterest.getId(), savedUser.getId());
 
         // then
-        // subScrpitpn 에서 없어야합니다.
+        Assertions.assertThat(subscriptionRepository.findById(new SubscriptionId(savedInterest.getId(), savedUser.getId()))).isEmpty();
+    }
 
+    @Transactional
+    @DisplayName("관심사 구독을 취소할때, 유저가 없으면 예외를 반환합니다.")
+    @Test
+    void unsubscribeInterest_NoUser() {
+        // given
+        Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
+
+        // when & then
+        Assertions.assertThatThrownBy(() -> interestService.unsubscribeInterest(savedInterest.getId(), -1L))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Transactional
+    @DisplayName("관심사 구독을 취소할떄, 관심사가 없으면 예외를 반환합니다.")
+    @Test
+    void unsubscribeInterest_NoInterest() {
+        // given
+        User savedUser = userRepository.save(new User("", "", ""));
+
+        // when & then
+        Assertions.assertThatThrownBy(() -> interestService.unsubscribeInterest(-1L, savedUser.getId()))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
