@@ -27,4 +27,8 @@ public class Interest extends BaseEntity {
         this.name = name;
     }
 
+    public void addSubscriberCount(int count) {
+        this.subscriberCount = this.subscriberCount + count;
+    }
+
 }

@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+
+import java.time.Instant;
 
 @Getter
 @Entity
@@ -20,6 +23,10 @@ public class Subscription extends BaseEntity {
     @MapsId("interestId")
     @JoinColumn(name = "interest_id", nullable = false)
     private Interest interest;
+
+    @CreatedDate
+    @Column(name = "subscribed_at")
+    private Instant subscribeAt;
 
     public Subscription(Interest interest, Long userId) {
         this.interest = interest;

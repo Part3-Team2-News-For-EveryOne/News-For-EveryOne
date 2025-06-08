@@ -6,6 +6,11 @@ import com.example.newsforeveryone.interest.repository.querydsl.InterestKeywordC
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface InterestKeywordRepository extends JpaRepository<InterestKeyword, InterestKeywordId>, InterestKeywordCustom {
+
+    List<InterestKeyword> findByInterest_Id(Long interestId);
+
 }

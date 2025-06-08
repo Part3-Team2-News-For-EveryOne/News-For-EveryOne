@@ -8,10 +8,13 @@ import com.example.newsforeveryone.interest.dto.response.CursorPageInterestRespo
 import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
+import com.example.newsforeveryone.interest.entity.Subscription;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
 import com.example.newsforeveryone.interest.service.InterestService;
+import com.example.newsforeveryone.user.entity.User;
+import com.example.newsforeveryone.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +29,7 @@ public class InterestServiceImpl implements InterestService {
     private final KeywordService keywordService;
     private final InterestRepository interestRepository;
     private final InterestKeywordRepository interestKeywordRepository;
+    private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
 
     @Override
@@ -46,6 +50,7 @@ public class InterestServiceImpl implements InterestService {
         return InterestResult.fromEntity(savedInterest, keywords, 0, null);
     }
 
+    // TODO: 6/8/25 보류
     @Override
     public CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest) {
         Map<Interest, List<String>> interestListMap = interestKeywordRepository.searchByWord(
@@ -62,11 +67,25 @@ public class InterestServiceImpl implements InterestService {
 
     @Override
     public SubscriptionResult subscribeInterest(long interestId, long userId) {
-        return null;
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException(""));
+        Interest interest = interestRepository.findById(interestId)
+                .orElseThrow(() -> new IllegalArgumentException(""));
+        Subscription saveSubscription = subscriptionRepository.save(new Subscription(interest, user.getId()));
+        interest.addSubscriberCount(1);
+
+        List<InterestKeyword> interestKeywords = interestKeywordRepository.findByInterest_Id(interestId);
+        List<String> keywords = interestKeywords.stream()
+                .map(InterestKeyword::getKeyword)
+                .map(Keyword::getName)
+                .toList();
+
+        return SubscriptionResult.fromEntity(saveSubscription, keywords);
     }
 
     @Override
     public void unsubscribeInterest(long interestId, long userId) {
+
     }
 
     @Override
