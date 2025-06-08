@@ -29,6 +29,9 @@ public interface RssParser {
   default List<RssRawArticleDto> parse(String feedUrl, RestTemplate restTemplate){
     try{
       Document document = fetchDocument(feedUrl, restTemplate);
+      NodeList items = document.getElementsByTagName("item");
+      System.out.println("Yonhap feed = " + feedUrl + " → root element = " + document.getDocumentElement().getNodeName());
+
       return parseDocument(document);
     } catch(Exception ex){
       ex.printStackTrace();

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -19,6 +20,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+@Slf4j
 @Component
 @StepScope
 @RequiredArgsConstructor
@@ -46,6 +48,8 @@ public class RssArticleItemReader implements ItemReader<RssRawArticleDto> {
   private List<RssRawArticleDto> fetchRss() {
     List<String> feedUrls = sourceRepository.findAllFeedUrl()
         .orElseThrow(() -> new IllegalArgumentException("RSS URL이 존재하지 않습니다."));
+    // log
+    feedUrls.forEach(url -> log.info("Loaded feedUrl: {}", url));
 
     List<RssRawArticleDto> allArticles = new ArrayList<>();
 
