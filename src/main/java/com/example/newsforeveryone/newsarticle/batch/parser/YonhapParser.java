@@ -16,8 +16,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-// 본문 내용이 조선은 content:encoded에 포함되어있고,
-// 연합은 description에 요약이 포함되어있음
 @Component
 @RequiredArgsConstructor
 public class YonhapParser implements RssParser{
@@ -32,7 +30,7 @@ public class YonhapParser implements RssParser{
   public RssRawArticleDto mapItem(Element item) {
     String title = getText(item, "title");
     String link = getText(item, "link");
-    // 연합뉴스는 description이 요약
+
     String summary = getText(item, "description");
     String author = getText(item, "dc:creator");
     Instant publishedAt = parseDate(getText(item, "pubDate"));

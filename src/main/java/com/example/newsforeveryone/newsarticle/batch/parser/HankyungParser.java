@@ -24,7 +24,6 @@ public class HankyungParser implements RssParser {
 
   @Override
   public boolean supports(String feedUrl) {
-    // 한국경제 RSS URL에 "hankyung.com"이 포함되어 있으면 이 파서를 사용
     return feedUrl.contains("hankyung.com");
   }
 

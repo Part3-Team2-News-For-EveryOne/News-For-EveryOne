@@ -21,9 +21,6 @@ public class ArticleProcessor implements ItemProcessor<RssRawArticleDto, NewsArt
     String content = item.title() + " " + item.summary();
     Set<Long> matchedInterestIds = keywordInterestCache.findInterestIdsFromContent(content);
 
-//    // 매칭된 관심사가 없다면 null return
-//    if(matchedInterestIds.isEmpty()) return null;
-
     return NewsArticle.builder()
         .sourceName(item.sourceName())
         .title(item.title())
