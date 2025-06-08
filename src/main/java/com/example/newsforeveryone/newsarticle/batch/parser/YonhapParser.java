@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.parsers.DocumentBuilderFactory;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -17,8 +16,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-// 연합은 description에 요약이 포함되어있음
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class YonhapParser implements RssParser{
@@ -33,7 +30,7 @@ public class YonhapParser implements RssParser{
   public RssRawArticleDto mapItem(Element item) {
     String title = getText(item, "title");
     String link = getText(item, "link");
-    // 연합뉴스는 description이 요약
+
     String summary = getText(item, "description");
     String author = getText(item, "dc:creator");
     Instant publishedAt = parseDate(getText(item, "pubDate"));
