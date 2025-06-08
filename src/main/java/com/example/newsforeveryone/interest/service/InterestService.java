@@ -4,6 +4,7 @@ import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.SubscriptionResult;
 import com.example.newsforeveryone.interest.dto.request.InterestRegisterRequest;
 import com.example.newsforeveryone.interest.dto.request.InterestSearchRequest;
+import com.example.newsforeveryone.interest.dto.request.InterestUpdateRequest;
 import com.example.newsforeveryone.interest.dto.response.CursorPageInterestResponse;
 
 public interface InterestService {
@@ -18,6 +19,6 @@ public interface InterestService {
 
     void deleteInterest(long interestId);
 
-    InterestResult updateKeywordInInterest(long interestId);
+    InterestResult updateKeywordInInterest(long interestId, long userId, InterestUpdateRequest interestUpdateRequest, double threshold);
 
 }

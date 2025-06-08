@@ -22,7 +22,6 @@ public record InterestResult(
     public static InterestResult fromEntity(
             Interest interest,
             List<Keyword> keywords,
-            int subscriberCount,
             Boolean subscribedByMe
     ) {
         List<String> convertedKeywords = keywords.stream()
@@ -33,7 +32,7 @@ public record InterestResult(
                 interest.getId(),
                 interest.getName(),
                 convertedKeywords,
-                subscriberCount,
+                interest.getSubscriberCount(),
                 subscribedByMe
         );
     }

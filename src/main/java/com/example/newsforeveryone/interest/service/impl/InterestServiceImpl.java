@@ -4,6 +4,7 @@ import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.SubscriptionResult;
 import com.example.newsforeveryone.interest.dto.request.InterestRegisterRequest;
 import com.example.newsforeveryone.interest.dto.request.InterestSearchRequest;
+import com.example.newsforeveryone.interest.dto.request.InterestUpdateRequest;
 import com.example.newsforeveryone.interest.dto.response.CursorPageInterestResponse;
 import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
@@ -50,10 +51,11 @@ public class InterestServiceImpl implements InterestService {
                 .toList();
         interestKeywordRepository.saveAll(interestKeywords);
 
-        return InterestResult.fromEntity(savedInterest, keywords, 0, null);
+        return InterestResult.fromEntity(savedInterest, keywords, null);
     }
 
     // TODO: 6/8/25 보류
+    @Transactional(readOnly = true)
     @Override
     public CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest) {
         Map<Interest, List<String>> interestListMap = interestKeywordRepository.searchByWord(
@@ -111,9 +113,20 @@ public class InterestServiceImpl implements InterestService {
         interestRepository.deleteById(interestId);
     }
 
+    @Transactional
     @Override
-    public InterestResult updateKeywordInInterest(long interestId) {
-        return null;
+    public InterestResult updateKeywordInInterest(long interestId, long userId, InterestUpdateRequest interestUpdateRequest, double threshold) {
+        Interest interest = interestRepository.findById(interestId)
+                .orElseThrow(() -> new IllegalArgumentException(""));
+        interestKeywordRepository.deleteByInterest_Id(interestId);
+
+        List<Keyword> keywords = keywordService.registerKeyword(interestUpdateRequest.keywords(), threshold);
+        List<InterestKeyword> nextInterestKeywords = keywords.stream()
+                .map(keyword -> new InterestKeyword(interest, keyword))
+                .toList();
+        interestKeywordRepository.saveAll(nextInterestKeywords);
+
+        return InterestResult.fromEntity(interest, keywords, subscriptionRepository.existsById(new SubscriptionId(interestId, userId)));
     }
 
 }

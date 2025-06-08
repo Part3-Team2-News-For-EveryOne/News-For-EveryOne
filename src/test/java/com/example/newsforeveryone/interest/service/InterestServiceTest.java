@@ -5,6 +5,7 @@ import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.SubscriptionResult;
 import com.example.newsforeveryone.interest.dto.request.InterestRegisterRequest;
 import com.example.newsforeveryone.interest.dto.request.InterestSearchRequest;
+import com.example.newsforeveryone.interest.dto.request.InterestUpdateRequest;
 import com.example.newsforeveryone.interest.dto.response.CursorPageInterestResponse;
 import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
@@ -212,6 +213,7 @@ class InterestServiceTest extends IntegrationTestSupport {
     }
 
     @Transactional
+    @DisplayName("관심사를 삭제할때, 관심사가 없으면 예외를 반환합니다.")
     @Test
     void deleteInterest_NoInterestException() {
         // when & then
@@ -219,9 +221,35 @@ class InterestServiceTest extends IntegrationTestSupport {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Transactional
+    @DisplayName("관심사의 키워드 정보를 수정합니다.")
     @Test
     void updateInterest() {
+        // given
+        User savedUser = userRepository.save(new User("", "", ""));
+        Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
+        InterestUpdateRequest interestUpdateRequest = new InterestUpdateRequest(List.of("중랑천", "면목천"));
 
+        // when
+        InterestResult interestResult = interestService.updateKeywordInInterest(savedInterest.getId(), savedUser.getId(), interestUpdateRequest, 0.8);
+
+        // then
+        Assertions.assertThat(interestResult)
+                .extracting(InterestResult::interestName, InterestResult::keywords)
+                .containsExactlyInAnyOrder("러닝머신", List.of("중랑천", "면목천"));
+    }
+
+    @Transactional
+    @DisplayName("관심사의 키워드 정보를 수정할떄, 관심사가 없으면 예외를 반환합니다.")
+    @Test
+    void updateInterest_NoInterestException() {
+        // given
+        User savedUser = userRepository.save(new User("", "", ""));
+        InterestUpdateRequest interestUpdateRequest = new InterestUpdateRequest(List.of("중랑천", "면목천"));
+
+        // when & then
+        Assertions.assertThatThrownBy(() -> interestService.updateKeywordInInterest(-1L, savedUser.getId(), interestUpdateRequest, 0.8))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private Interest saveInterestAndKeyword(String interestName, List<String> keywordNames) {
