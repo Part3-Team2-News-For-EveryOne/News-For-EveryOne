@@ -20,6 +20,9 @@ public class Interest extends BaseEntity {
     @JoinColumn(name = "name", nullable = false, unique = true)
     private String name;
 
+    @JoinColumn(name = "subscriber_count", nullable = false)
+    private int subscriberCount;
+
     public Interest(String name) {
         this.name = name;
     }
