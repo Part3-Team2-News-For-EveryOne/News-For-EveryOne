@@ -16,6 +16,7 @@ public class ArticleBatchScheduler {
 
   private final JobLauncher jobLauncher;
   private final Job articleCollectJob;
+  private final Job backupNewsArticleJob;
 
   @Scheduled(cron = "0 0 * * * *") // 매 정시
   public void runJob() throws Exception {
@@ -23,5 +24,13 @@ public class ArticleBatchScheduler {
         .addLong("run.id", System.currentTimeMillis())
         .toJobParameters();
     jobLauncher.run(articleCollectJob, params);
+  }
+
+  @Scheduled(cron = "0 0 0 6 * *")
+  public void runBackupJob() throws Exception {
+    JobParameters params = new JobParametersBuilder()
+            .addLong("run.id", System.currentTimeMillis())
+            .toJobParameters();
+    jobLauncher.run(backupNewsArticleJob, params);
   }
 }

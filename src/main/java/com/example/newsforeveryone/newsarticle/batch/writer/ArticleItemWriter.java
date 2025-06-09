@@ -12,7 +12,7 @@ import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("articleItemWriter")
 @RequiredArgsConstructor
 public class ArticleItemWriter implements ItemWriter<NewsArticle> {
 

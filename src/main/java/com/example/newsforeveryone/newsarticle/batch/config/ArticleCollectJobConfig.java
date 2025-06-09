@@ -1,7 +1,6 @@
 package com.example.newsforeveryone.newsarticle.batch.config;
 
 import com.example.newsforeveryone.newsarticle.batch.dto.RssRawArticleDto;
-import com.example.newsforeveryone.newsarticle.dto.ArticleDto;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -13,6 +12,7 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -32,12 +32,13 @@ public class ArticleCollectJobConfig {
         .start(collectRssStep)
         .build();
   }
-  
+
+  @Qualifier("collectRssStep")
   @Bean
-  public Step collectRswsStep(
+  public Step collectRssStep(
       ItemReader<RssRawArticleDto> reader, //ArticleDto로 읽어와지는건가?
       ItemProcessor<RssRawArticleDto, NewsArticle> processor,
-      ItemWriter<NewsArticle> writer
+      @Qualifier("articleItemWriter") ItemWriter<NewsArticle> writer
   ) {
     return new StepBuilder("collectRssStep", jobRepository)
         .<RssRawArticleDto, NewsArticle>chunk(50, transactionManager)
