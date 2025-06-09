@@ -237,8 +237,8 @@ class InterestServiceTest extends IntegrationTestSupport {
 
         // then
         Assertions.assertThat(interestResult)
-                .extracting(InterestResult::interestName, InterestResult::keywords)
-                .containsExactlyInAnyOrder("러닝머신", List.of("중랑천", "면목천"));
+                .extracting(InterestResult::interestName, InterestResult::keywords, InterestResult::subscribedByMe)
+                .containsExactlyInAnyOrder("러닝머신", List.of("중랑천", "면목천"), false);
     }
 
     @Transactional
@@ -252,6 +252,19 @@ class InterestServiceTest extends IntegrationTestSupport {
         // when & then
         Assertions.assertThatThrownBy(() -> interestService.updateKeywordInInterest(-1L, savedUser.getId(), interestUpdateRequest, 0.8))
                 .isInstanceOf(InterestNotFoundException.class);
+    }
+
+    @Transactional
+    @DisplayName("관심사의 키워드 정보를 수정할떄, 등록되지 않은 유저면 예외를 반환합니다.")
+    @Test
+    void updateInterest_NoUserException() {
+        // given
+        Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
+        InterestUpdateRequest interestUpdateRequest = new InterestUpdateRequest(List.of("중랑천", "면목천"));
+
+        // when & then
+        Assertions.assertThatThrownBy(() -> interestService.updateKeywordInInterest(savedInterest.getId(), -1L, interestUpdateRequest, 0.8))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private Interest saveInterestAndKeyword(String interestName, List<String> keywordNames) {

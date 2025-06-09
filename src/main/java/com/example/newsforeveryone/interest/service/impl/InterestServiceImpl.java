@@ -118,6 +118,8 @@ public class InterestServiceImpl implements InterestService {
     @Transactional
     @Override
     public InterestResult updateKeywordInInterest(long interestId, long userId, InterestUpdateRequest interestUpdateRequest, double threshold) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 없습니다."));
         Interest interest = interestRepository.findById(interestId)
                 .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
         interestKeywordRepository.deleteByInterest_Id(interestId);
@@ -128,7 +130,7 @@ public class InterestServiceImpl implements InterestService {
                 .toList();
         interestKeywordRepository.saveAll(nextInterestKeywords);
 
-        return InterestResult.fromEntity(interest, keywords, subscriptionRepository.existsById(new SubscriptionId(interestId, userId)));
+        return InterestResult.fromEntity(interest, keywords, subscriptionRepository.existsById(new SubscriptionId(interestId, user.getId())));
     }
 
 }
