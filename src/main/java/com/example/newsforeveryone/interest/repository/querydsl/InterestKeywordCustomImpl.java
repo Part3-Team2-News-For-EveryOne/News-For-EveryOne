@@ -1,24 +1,18 @@
 package com.example.newsforeveryone.interest.repository.querydsl;
 
-import com.example.newsforeveryone.interest.entity.Interest;
-import com.example.newsforeveryone.interest.entity.QInterest;
-import com.example.newsforeveryone.interest.entity.QInterestKeyword;
-import com.example.newsforeveryone.interest.entity.QKeyword;
+import com.example.newsforeveryone.interest.entity.*;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.ComparableExpressionBase;
-import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -39,28 +33,27 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
         QInterest interest = QInterest.interest;
         QKeyword keyword = QKeyword.keyword;
 
-        // 키워드에서
-        List<Long> keywordIds = queryFactory
-                .select(keyword.id)
+        List<Keyword> keywordIds = queryFactory
+                .select(keyword)
                 .from(keyword)
                 .where(keyword.name.containsIgnoreCase(word))
                 .fetch();
-        // InterestKeyword에서 가져오기
-        List<Long> keywordInterestIds = queryFactory
-                .selectDistinct(interestKeyword.interest.id)
+        List<Interest> keywordInterestIds = queryFactory
+                .selectDistinct(interestKeyword.interest)
                 .from(interestKeyword)
-                .where(interestKeyword.keyword.id.in(keywordIds))
+                .where(interestKeyword.keyword.in(keywordIds))
                 .fetch();
 
-        // Interest에서 가져오기
-        List<Long> targetInterestIds = queryFactory
-                .select(interest.id)
+        List<Interest> InterestsWithWord = queryFactory
+                .select(interest)
                 .from(interest)
-                .where(interest.id.in(keywordInterestIds)
-                        .or(interest.name.containsIgnoreCase(word))
-                        .and(cursorCondition(cursor, after, orderBy, direction, interest)))
+                .where(
+                        (interest.in(keywordInterestIds)
+                                .or(interest.name.containsIgnoreCase(word)))
+                                .and(cursorCondition(cursor, after, orderBy, direction, interest))
+                )
                 .orderBy(
-                        getPrimaryOrder(direction, orderBy, interest),
+                        getPrimaryOrder(orderBy, direction, interest),
                         getSecondaryOrder(direction, interest)
                 )
                 .limit(limit)
@@ -69,49 +62,80 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
         List<Tuple> result = queryFactory
                 .select(interest, keyword.name)
                 .from(interestKeyword)
-                .join(interestKeyword.interest, interest)
-                .join(interestKeyword.keyword, keyword)
-                .where(interest.id.in(targetInterestIds))
+                .innerJoin(interestKeyword.interest, interest)
+                .innerJoin(interestKeyword.keyword, keyword)
+                .where(interest.in(InterestsWithWord))
                 .fetch();
-
-        return result.stream()
-                .filter(tuple -> tuple.get(interest) != null && tuple.get(keyword.name) != null)
-                .collect(Collectors.groupingBy(
-                        tuple -> tuple.get(interest),
-                        Collectors.mapping(tuple -> tuple.get(keyword.name), Collectors.toList())
-                ));
-    }
-
-    // null일떄 처리필요
-    private BooleanExpression cursorCondition(String cursor, String after, String orderBy, String direction, QInterest interest) {
-        if (after != null && !after.isBlank() && cursor != null && !cursor.isBlank()) {
-
-            if (direction.equalsIgnoreCase("asc")) {
-                if (orderBy.equals("subscriberCount")) {
-                    return interest.subscriberCount.gt(Integer.valueOf(cursor))
-                            .and(interest.createdAt.gt(Instant.parse(after)));
-                } else {
-                    return interest.name.gt(cursor)
-                            .and(interest.createdAt.gt(Instant.parse(after)));
-                }
+        Map<Interest, List<String>> interestKeywordMap = new LinkedHashMap<>();
+        for (Interest interestWithWord : InterestsWithWord) {
+            interestKeywordMap.put(interestWithWord, new ArrayList<>());
+        }
+        for (Tuple tuple : result) {
+            Interest interest1 = tuple.get(interest);
+            String keywordName = tuple.get(keyword.name);
+            if (interest1 != null && keywordName != null) {
+                interestKeywordMap.get(interest1).add(keywordName);
             }
-
-
-            if (orderBy.equals("subscriberCount")) {
-                return interest.subscriberCount.lt(Integer.valueOf(cursor))
-                        .and(interest.createdAt.lt(Instant.parse(after)));
-            }
-            return interest.name.lt(cursor)
-                    .and(interest.createdAt.lt(Instant.parse(after)));
         }
 
-
-        return cursor != null ? interest.name.gt(cursor) : null;
+        return interestKeywordMap;
     }
 
+    private BooleanBuilder cursorCondition(String cursor, String after, String orderBy, String direction, QInterest interest) {
+        boolean isAsc = isAsc(direction);
+        Instant afterCreatedAt = getAfter(after, isAsc);
+        BooleanBuilder whereClause = new BooleanBuilder();
+
+        if (cursor != null) {
+            if (isAsc) {
+                if (orderBy.equals("subscriberCount")) {
+                    return whereClause.andAnyOf(
+                            interest.subscriberCount.gt(Integer.valueOf(cursor)),
+                            interest.subscriberCount.eq(Integer.valueOf(cursor)).and(interest.createdAt.gt(afterCreatedAt))
+                    );
+                } else {
+                    return whereClause.andAnyOf(
+                            interest.name.gt(cursor)
+                    );
+                }
+            } else {
+                if (orderBy.equals("subscriberCount")) {
+                    return whereClause.andAnyOf(
+                            interest.subscriberCount.lt(Integer.valueOf(cursor)),
+                            interest.subscriberCount.eq(Integer.valueOf(cursor)).and(interest.createdAt.lt(afterCreatedAt))
+                    );
+                } else {
+                    return whereClause.andAnyOf(
+                            interest.name.lt(cursor)
+                    );
+                }
+            }
+        }
+
+        return whereClause;
+    }
+
+    private boolean isAsc(String direction) {
+        if (direction == null) {
+            return false;
+        }
+
+        return direction.equalsIgnoreCase("asc");
+    }
+
+    private Instant getAfter(String after, boolean isAsc) {
+        if (after == null || after.isBlank()) {
+            if (isAsc) {
+                return Instant.EPOCH;
+            }
+            return Instant.now();
+        }
+
+        return Instant.parse(after);
+    }
 
     private OrderSpecifier<?> getPrimaryOrder(String orderBy, String direction, QInterest interest) {
-        boolean isAsc = direction.equalsIgnoreCase("asc");
+        boolean isAsc = isAsc(direction);
         if (orderBy.equals("subscriberCount")) {
             if (isAsc) {
                 return interest.subscriberCount.asc();
@@ -126,7 +150,7 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
     }
 
     private OrderSpecifier<?> getSecondaryOrder(String direction, QInterest interest) {
-        boolean isAsc = direction.equalsIgnoreCase("asc");
+        boolean isAsc = isAsc(direction);
         if (isAsc) {
             return interest.createdAt.asc();
         }
