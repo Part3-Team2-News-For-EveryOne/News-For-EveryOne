@@ -11,6 +11,8 @@ import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
+import com.example.newsforeveryone.interest.exception.InterestAlreadyExistException;
+import com.example.newsforeveryone.interest.exception.InterestNotFoundException;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.KeywordRepository;
@@ -74,7 +76,7 @@ class InterestServiceTest extends IntegrationTestSupport {
 
         // when & then
         Assertions.assertThatThrownBy(() -> interestService.registerInterest(interestRegisterRequest, 0.8))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(InterestAlreadyExistException.class);
     }
 
     @Transactional
@@ -149,7 +151,7 @@ class InterestServiceTest extends IntegrationTestSupport {
 
         // when & then
         Assertions.assertThatThrownBy(() -> interestService.subscribeInterest(-1L, savedUser.getId()))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(InterestNotFoundException.class);
     }
 
     @Transactional
@@ -189,7 +191,7 @@ class InterestServiceTest extends IntegrationTestSupport {
 
         // when & then
         Assertions.assertThatThrownBy(() -> interestService.unsubscribeInterest(-1L, savedUser.getId()))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(InterestNotFoundException.class);
     }
 
     @Transactional
@@ -218,7 +220,7 @@ class InterestServiceTest extends IntegrationTestSupport {
     void deleteInterest_NoInterestException() {
         // when & then
         Assertions.assertThatThrownBy(() -> interestService.deleteInterest(-1L))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(InterestNotFoundException.class);
     }
 
     @Transactional
@@ -249,7 +251,7 @@ class InterestServiceTest extends IntegrationTestSupport {
 
         // when & then
         Assertions.assertThatThrownBy(() -> interestService.updateKeywordInInterest(-1L, savedUser.getId(), interestUpdateRequest, 0.8))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(InterestNotFoundException.class);
     }
 
     private Interest saveInterestAndKeyword(String interestName, List<String> keywordNames) {

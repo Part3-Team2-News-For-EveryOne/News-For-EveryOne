@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+// 시큐리티로 수정 필요
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/interests")

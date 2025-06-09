@@ -11,6 +11,8 @@ import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.Subscription;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
+import com.example.newsforeveryone.interest.exception.InterestAlreadyExistException;
+import com.example.newsforeveryone.interest.exception.InterestNotFoundException;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
@@ -40,7 +42,7 @@ public class InterestServiceImpl implements InterestService {
     public InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest, double threshold) {
         Optional<Double> interestSimilarity = interestRepository.findMaxSimilarity(interestRegisterRequest.name());
         if (interestSimilarity.isPresent() && interestSimilarity.get() >= threshold) {
-            throw new IllegalArgumentException("해당 관심사와 유사한 관심사가 이미 있습니다.");
+            throw new InterestAlreadyExistException(Map.of("name", interestRegisterRequest.name(), "similarity", interestSimilarity.get()));
         }
         Interest interest = new Interest(interestRegisterRequest.name());
         Interest savedInterest = interestRepository.save(interest);
@@ -74,9 +76,9 @@ public class InterestServiceImpl implements InterestService {
     @Override
     public SubscriptionResult subscribeInterest(long interestId, long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException(""));
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 없습니다."));
         Interest interest = interestRepository.findById(interestId)
-                .orElseThrow(() -> new IllegalArgumentException(""));
+                .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
         Subscription saveSubscription = subscriptionRepository.save(new Subscription(interest, user.getId()));
         interest.addSubscriberCount(1);
         interestRepository.save(interest);
@@ -94,10 +96,10 @@ public class InterestServiceImpl implements InterestService {
     @Override
     public void unsubscribeInterest(long interestId, long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("");
+            throw new IllegalArgumentException("해당 유저가 없습니다.");
         }
         if (!interestRepository.existsById(interestId)) {
-            throw new IllegalArgumentException("");
+            throw new InterestNotFoundException(Map.of("interest-id", interestId));
         }
         subscriptionRepository.deleteById(new SubscriptionId(interestId, userId));
     }
@@ -106,7 +108,7 @@ public class InterestServiceImpl implements InterestService {
     @Override
     public void deleteInterest(long interestId) {
         if (!interestRepository.existsById(interestId)) {
-            throw new IllegalArgumentException("");
+            throw new InterestNotFoundException(Map.of("interest-id", interestId));
         }
         interestKeywordRepository.deleteByInterest_Id(interestId);
         subscriptionRepository.deleteByInterest_Id(interestId);
@@ -117,7 +119,7 @@ public class InterestServiceImpl implements InterestService {
     @Override
     public InterestResult updateKeywordInInterest(long interestId, long userId, InterestUpdateRequest interestUpdateRequest, double threshold) {
         Interest interest = interestRepository.findById(interestId)
-                .orElseThrow(() -> new IllegalArgumentException(""));
+                .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
         interestKeywordRepository.deleteByInterest_Id(interestId);
 
         List<Keyword> keywords = keywordService.registerKeyword(interestUpdateRequest.keywords(), threshold);
