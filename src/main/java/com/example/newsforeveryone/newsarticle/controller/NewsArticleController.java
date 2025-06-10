@@ -55,7 +55,8 @@ public class NewsArticleController {
   @GetMapping("/restore")
   public ResponseEntity<ArticleRestoreResultDto> restoreArticle(
       @RequestParam Instant from,
-      @RequestParam Instant to) {
+      @RequestParam Instant to
+  ) {
     ArticleRestoreResultDto result = newsArticleService.restoreArticles(from, to);
     return ResponseEntity.ok().body(result);
   }

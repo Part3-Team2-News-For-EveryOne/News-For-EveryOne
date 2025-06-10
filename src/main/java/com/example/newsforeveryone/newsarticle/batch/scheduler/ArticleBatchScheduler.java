@@ -26,7 +26,7 @@ public class ArticleBatchScheduler {
     jobLauncher.run(articleCollectJob, params);
   }
 
-  @Scheduled(cron = "0 0 0 6 * *")
+  @Scheduled(cron = "0 50 23 * * *")
   public void runBackupJob() throws Exception {
     JobParameters params = new JobParametersBuilder()
             .addLong("run.id", System.currentTimeMillis())

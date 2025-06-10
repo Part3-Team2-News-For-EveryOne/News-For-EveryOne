@@ -13,7 +13,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, Long> 
   @Query("select a.link from NewsArticle a where a.link in :links")
   List<String> findLinksByLinkIn(@Param("links") Set<String> links);
 
-  @Query("SELECT a FROM NewsArticle a WHERE a.createdAt BETWEEN :from AND :to")
+  @Query("SELECT a FROM NewsArticle a WHERE a.publishedAt BETWEEN :from AND :to")
   List<NewsArticle> findAllByCreatedAtBetween(Instant from, Instant to);
 
   List<NewsArticle> findAllByLinkIn(List<String> links);

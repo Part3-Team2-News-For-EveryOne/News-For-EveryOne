@@ -1,12 +1,15 @@
 package com.example.newsforeveryone.newsarticle.service;
 
+import com.example.newsforeveryone.common.exception.BaseException;
+import com.example.newsforeveryone.common.exception.ErrorCode;
 import com.example.newsforeveryone.newsarticle.dto.ArticleRestoreResultDto;
 import com.example.newsforeveryone.newsarticle.dto.ArticleViewDto;
 import com.example.newsforeveryone.newsarticle.dto.CursorPageArticleRequest;
 import com.example.newsforeveryone.newsarticle.dto.CursorPageResponseArticleDto;
+import com.example.newsforeveryone.newsarticle.entity.ArticleView;
+import com.example.newsforeveryone.newsarticle.entity.ArticleViewId;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
-import com.example.newsforeveryone.newsarticle.repository.NewsArticleQueryRepository;
-import com.example.newsforeveryone.newsarticle.repository.NewsArticleRepository;
+import com.example.newsforeveryone.newsarticle.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,24 +18,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import com.example.newsforeveryone.common.exception.BaseException;
-import com.example.newsforeveryone.common.exception.ErrorCode;
-import com.example.newsforeveryone.newsarticle.entity.ArticleView;
-import com.example.newsforeveryone.newsarticle.entity.ArticleViewId;
-import com.example.newsforeveryone.newsarticle.repository.ArticleViewRepository;
-import com.example.newsforeveryone.newsarticle.repository.FakeCommentRepository;
-import com.example.newsforeveryone.newsarticle.repository.SourceRepository;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -103,35 +99,35 @@ public class NewsArticleServiceImpl implements NewsArticleService {
         .filter(article -> !existingLinks.contains(article.getLink()))
         .toList();
 
-    // ---누락 기사 복구 수행 ----------------------------------------------------
-    if (!missingArticles.isEmpty()) {
-      missingArticles.forEach(article -> article.setId(null));
-      List<NewsArticle> saved = newsArticleRepository.saveAll(missingArticles);
-      List<Long> ids = saved.stream().map(NewsArticle::getId).toList();
-      log.info("누락된 기사 {}개 복구 완료", saved.size());
-      return new ArticleRestoreResultDto(Instant.now(), ids, (long) ids.size());
-    } else {
-      log.info("모든 기사가 이미 존재합니다");
-      return new ArticleRestoreResultDto(Instant.now(), List.of(), 0L);
+        // ---누락 기사 복구 수행 ----------------------------------------------------
+        if (!missingArticles.isEmpty()) {
+            missingArticles.forEach(article -> article.setId(null));
+            List<NewsArticle> saved = newsArticleRepository.saveAll(missingArticles);
+            List<Long> ids = saved.stream().map(NewsArticle::getId).toList();
+            log.info("{} missing articles have been restored", saved.size());
+            return new ArticleRestoreResultDto(Instant.now(), ids, (long) ids.size());
+        } else {
+            log.info("All articles already exist");
+            return new ArticleRestoreResultDto(Instant.now(), List.of(), 0L);
+        }
     }
-  }
 
-  @Override
-  @Transactional
-  public void softDeleteArticle(Long articleId) {
-    NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
-        .orElseThrow(() -> new IllegalArgumentException("뉴스 기사 정보가 존재하지 않습니다."));
-    matchingNewsArticle.setDeletedAt(Instant.now());
-    newsArticleRepository.save(matchingNewsArticle);
-  }
+    @Override
+    public void softDeleteArticle(Long articleId) {
+        NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
+                .orElseThrow(() -> new BaseException(ErrorCode.ARTICLE_NOT_FOUND, Map.of("articleId", articleId)));
+        matchingNewsArticle.setDeletedAt(Instant.now());
+        newsArticleRepository.save(matchingNewsArticle);
+        log.info("Article logically deleted. articleId: {}", articleId);
+    }
 
-  @Override
-  @Transactional
-  public void hardDeleteArticle(Long articleId) {
-    NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
-        .orElseThrow(() -> new IllegalArgumentException("뉴스 기사 정보가 존재하지 않습니다."));
-    newsArticleRepository.delete(matchingNewsArticle);
-  }
+    @Override
+    public void hardDeleteArticle(Long articleId) {
+        NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
+                .orElseThrow(() -> new BaseException(ErrorCode.ARTICLE_NOT_FOUND, Map.of("articleId", articleId)));
+        newsArticleRepository.delete(matchingNewsArticle);
+        log.info("Article physically deleted. articleId: {}", articleId);
+    }
 
   // ===== 내부 메서드 =====
   private List<NewsArticle> getS3Backup(Instant from) {
@@ -145,18 +141,17 @@ public class NewsArticleServiceImpl implements NewsArticleService {
           .key(key)
           .build();
 
-      InputStream inputStream = s3Client.getObject(getObjectRequest);
-      BufferedReader reader = new BufferedReader(
-          new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-      List<NewsArticle> backupArticles = new ArrayList<>();
-      String line;
-      while ((line = reader.readLine()) != null) {
-        backupArticles.add(objectMapper.readValue(line, NewsArticle.class));
-      }
-      return backupArticles;
-    } catch (Exception e) {
-      log.error("백업 파일 가져오기 실패", e);
-      throw new RuntimeException(e);
+            InputStream inputStream = s3Client.getObject(getObjectRequest);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            List<NewsArticle> backupArticles = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                backupArticles.add(objectMapper.readValue(line, NewsArticle.class));
+            }
+            return backupArticles;
+        } catch (Exception e) {
+            log.error("Failed to retrieve backup file", e);
+            throw new RuntimeException(e);
+        }
     }
-  }
 }

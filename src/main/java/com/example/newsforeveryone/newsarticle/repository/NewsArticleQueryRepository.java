@@ -1,10 +1,5 @@
 package com.example.newsforeveryone.newsarticle.repository;
 
-import static com.example.newsforeveryone.newsarticle.entity.QArticleInterest.articleInterest;
-import static com.example.newsforeveryone.newsarticle.entity.QArticleView.articleView;
-import static com.example.newsforeveryone.newsarticle.entity.QNewsArticle.newsArticle;
-import static com.example.newsforeveryone.newsarticle.entity.QNewsArticleMetric.newsArticleMetric;
-
 import com.example.newsforeveryone.newsarticle.dto.ArticleDto;
 import com.example.newsforeveryone.newsarticle.dto.CursorPageArticleRequest;
 import com.example.newsforeveryone.newsarticle.dto.CursorPageResponseArticleDto;
@@ -12,15 +7,22 @@ import com.example.newsforeveryone.newsarticle.dto.QArticleDto;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
+
+import static com.example.newsforeveryone.newsarticle.entity.QArticleInterest.articleInterest;
+import static com.example.newsforeveryone.newsarticle.entity.QArticleView.articleView;
+import static com.example.newsforeveryone.newsarticle.entity.QNewsArticle.newsArticle;
+import static com.example.newsforeveryone.newsarticle.entity.QNewsArticleMetric.newsArticleMetric;
+
 
 @Repository
 @RequiredArgsConstructor
@@ -137,24 +139,26 @@ public class NewsArticleQueryRepository {
         : null;
   }
 
-  private BooleanExpression publishDateBetween(Instant from, Instant to) {
+  private BooleanExpression publishDateBetween(LocalDateTime from, LocalDateTime to) {
     BooleanExpression condition = null;
     ZoneId KST = ZoneId.of("Asia/Seoul");
 
     if (from != null) {
-      Instant kstStart = from.atZone(KST)
-          .toLocalDate()
-          .atStartOfDay(KST)
-          .toInstant();
+      Instant kstStart = from
+              .toLocalDate()
+              .atStartOfDay(KST)
+              .toInstant();
       condition = newsArticle.publishedAt.goe(kstStart);
     }
 
     if (to != null) {
-      Instant kstEnd = to.atZone(KST)
-          .toLocalDate()
-          .plusDays(1).atStartOfDay(KST).minusNanos(1)
-          .toInstant();
-      BooleanExpression toCondition = newsArticle.publishedAt.loe(kstEnd);
+      Instant kstEnd = to
+              .toLocalDate()
+              .plusDays(1)
+              .atStartOfDay(KST)
+              .toInstant();
+      BooleanExpression toCondition = newsArticle.publishedAt.lt(kstEnd);
+
       condition = (condition == null) ? toCondition : condition.and(toCondition);
     }
 

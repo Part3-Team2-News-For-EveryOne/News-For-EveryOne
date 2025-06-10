@@ -3,16 +3,17 @@ package com.example.newsforeveryone.newsarticle.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 
 public record CursorPageArticleRequest(
     String keyword,
     Long interestId,
     List<String> sourceIn,
-    Instant publishDateFrom,
-    Instant publishDateTo,
+    LocalDateTime publishDateFrom,
+    LocalDateTime publishDateTo,
 
     @NotNull
     String orderBy,

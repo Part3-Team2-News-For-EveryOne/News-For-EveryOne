@@ -1,6 +1,8 @@
 package com.example.newsforeveryone.newsarticle.batch.writer;
 
+import com.example.newsforeveryone.newsarticle.entity.ArticleBackupHistory;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
+import com.example.newsforeveryone.newsarticle.repository.ArticleBackupHistoryRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Slf4j
@@ -28,9 +31,9 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class ArticleBackupWriter implements ItemWriter<NewsArticle>, StepExecutionListener {
 
+    private final ArticleBackupHistoryRepository articleBackupHistoryRepository;
     private final S3Client s3Client;
     private final ObjectMapper objectMapper;
-
     private File tempFile;
     private BufferedWriter writer;
 
@@ -73,10 +76,23 @@ public class ArticleBackupWriter implements ItemWriter<NewsArticle>, StepExecuti
             s3Client.putObject(request, RequestBody.fromFile(tempFile.toPath()));
             log.info("뉴스 {}건 S3 업로드 성공: {}", stepExecution.getWriteCount(), key);
 
+            ArticleBackupHistory articleBackupHistory = ArticleBackupHistory.builder()
+                    .backupDate(Instant.now())
+                    .status("COMPLETED")
+                    .fileSizeBytes(tempFile.length())
+                    .build();
+            articleBackupHistoryRepository.save(articleBackupHistory);
+
             return ExitStatus.COMPLETED;
 
         } catch (Exception e) {
             log.error("S3 업로드 실패", e);
+            ArticleBackupHistory articleBackupHistory = ArticleBackupHistory.builder()
+                    .backupDate(Instant.now())
+                    .status("FAILED")
+                    .fileSizeBytes(tempFile.length())
+                    .build();
+            articleBackupHistoryRepository.save(articleBackupHistory);
             return ExitStatus.FAILED;
         } finally {
             if (tempFile != null && tempFile.exists()) {
