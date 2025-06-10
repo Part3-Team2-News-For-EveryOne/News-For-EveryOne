@@ -19,6 +19,7 @@ import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
 import com.example.newsforeveryone.interest.service.InterestService;
 import com.example.newsforeveryone.user.entity.User;
+import com.example.newsforeveryone.user.exception.UserNotFoundException;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -49,11 +50,13 @@ public class InterestServiceImpl implements InterestService {
         Interest interest = new Interest(interestRegisterRequest.name());
         Interest savedInterest = interestRepository.save(interest);
 
+        //
         List<Keyword> keywords = keywordService.registerKeyword(interestRegisterRequest.keywords(), threshold);
         List<InterestKeyword> interestKeywords = keywords.stream()
                 .map(keyword -> new InterestKeyword(interest, keyword))
                 .toList();
         interestKeywordRepository.saveAll(interestKeywords);
+        //
 
         List<String> keywordNames = keywords.stream().map(Keyword::getName).toList();
         return InterestResult.fromEntity(savedInterest, keywordNames, null);
@@ -63,11 +66,11 @@ public class InterestServiceImpl implements InterestService {
     @Override
     public CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest, long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
 
         List<Interest> interests = getInterests(interestSearchRequest);
-        boolean hasNext = interests.size() > interestSearchRequest.limit();
 
+        boolean hasNext = interests.size() > interestSearchRequest.limit();
         List<Interest> slicedInterests = getSlicedInterest(interests, hasNext, interestSearchRequest.limit());
         Map<Interest, List<String>> groupedKeywordsByInterest = interestKeywordRepository.groupKeywordsByInterest(slicedInterests);
 
@@ -103,7 +106,7 @@ public class InterestServiceImpl implements InterestService {
     @Override
     public SubscriptionResult subscribeInterest(long interestId, long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
         Interest interest = interestRepository.findById(interestId)
                 .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
         Subscription saveSubscription = subscriptionRepository.save(new Subscription(interest, user.getId()));
@@ -123,7 +126,7 @@ public class InterestServiceImpl implements InterestService {
     @Override
     public void unsubscribeInterest(long interestId, long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("해당 유저가 없습니다.");
+            throw new UserNotFoundException(Map.of("user-id", userId));
         }
         Interest interest = interestRepository.findById(interestId)
                 .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
@@ -148,7 +151,7 @@ public class InterestServiceImpl implements InterestService {
     @Override
     public InterestResult updateKeywordInInterest(long interestId, long userId, InterestUpdateRequest interestUpdateRequest, double threshold) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
         Interest interest = interestRepository.findById(interestId)
                 .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
         interestKeywordRepository.deleteByInterest_Id(interestId);

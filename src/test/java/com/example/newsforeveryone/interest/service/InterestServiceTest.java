@@ -18,6 +18,7 @@ import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.KeywordRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
 import com.example.newsforeveryone.user.entity.User;
+import com.example.newsforeveryone.user.exception.UserNotFoundException;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
@@ -159,7 +160,7 @@ class InterestServiceTest extends IntegrationTestSupport {
 
         // when & then
         Assertions.assertThatThrownBy(() -> interestService.subscribeInterest(savedInterest.getId(), -1L))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UserNotFoundException.class);
     }
 
     @Transactional
@@ -207,7 +208,7 @@ class InterestServiceTest extends IntegrationTestSupport {
 
         // when & then
         Assertions.assertThatThrownBy(() -> interestService.unsubscribeInterest(savedInterest.getId(), -1L))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UserNotFoundException.class);
     }
 
     @Transactional
@@ -292,7 +293,7 @@ class InterestServiceTest extends IntegrationTestSupport {
 
         // when & then
         Assertions.assertThatThrownBy(() -> interestService.updateKeywordInInterest(savedInterest.getId(), -1L, interestUpdateRequest, 0.8))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(UserNotFoundException.class);
     }
 
     private Interest saveInterestAndKeyword(String interestName, List<String> keywordNames) {
