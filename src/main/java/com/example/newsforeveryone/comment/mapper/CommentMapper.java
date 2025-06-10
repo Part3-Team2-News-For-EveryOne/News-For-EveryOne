@@ -23,9 +23,9 @@ public class CommentMapper {
 
   public CommentResponse toResponse(Comment comment, String userNickname, boolean likedByMe) {
     return new CommentResponse(
-        comment.getId().toString(),
-        comment.getArticleId().toString(),
-        comment.getUserId().toString(),
+        comment.getId(),
+        comment.getArticleId(),
+        comment.getUserId(),
         userNickname,
         comment.getContent(),
         comment.getLikeCount(),
@@ -49,10 +49,10 @@ public class CommentMapper {
 
   public CommentLikeResponse toCommentLikeResponse(Comment comment, String userNickname) {
     return new CommentLikeResponse(
-        comment.getId().toString(),
-        comment.getId().toString(),
-        comment.getArticleId().toString(),
-        comment.getUserId().toString(),
+        comment.getId(),
+        comment.getId(),
+        comment.getArticleId(),
+        comment.getUserId(),
         userNickname,
         comment.getContent(),
         comment.getLikeCount(),
