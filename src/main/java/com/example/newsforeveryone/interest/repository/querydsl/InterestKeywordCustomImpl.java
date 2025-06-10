@@ -45,6 +45,9 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
         QInterestKeyword interestKeyword = QInterestKeyword.interestKeyword;
         QInterest interest = QInterest.interest;
         QKeyword keyword = QKeyword.keyword;
+        if (word == null) {
+            word = "";
+        }
 
         List<Interest> keywordMatchedInterests = getInterestsInKeyword(word, interestKeyword, keyword);
 

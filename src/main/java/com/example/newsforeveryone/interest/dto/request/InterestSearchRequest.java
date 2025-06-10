@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record InterestSearchRequest(
-        @NotBlank
         @JsonProperty("keyword")
         String keyword,
 
@@ -27,4 +26,15 @@ public record InterestSearchRequest(
         @JsonProperty("limit")
         Integer limit
 ) {
+    private static final String DEFAULT_PAGE_SIZE = "50";
+
+    public InterestSearchRequest {
+        if (limit != null && limit < Integer.parseInt(DEFAULT_PAGE_SIZE)) {
+            limit = Integer.valueOf(DEFAULT_PAGE_SIZE);
+        }
+        if (limit == null) {
+            limit = Integer.valueOf(DEFAULT_PAGE_SIZE);
+        }
+    }
+
 }

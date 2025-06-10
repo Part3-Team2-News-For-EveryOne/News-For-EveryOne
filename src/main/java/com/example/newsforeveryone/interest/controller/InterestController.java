@@ -30,7 +30,7 @@ public class InterestController {
     }
 
     @GetMapping
-    public ResponseEntity<CursorPageInterestResponse<InterestResult>> getAllInterests(@Valid @RequestBody InterestSearchRequest interestSearchRequest) {
+    public ResponseEntity<CursorPageInterestResponse<InterestResult>> getAllInterests(@Valid @ModelAttribute InterestSearchRequest interestSearchRequest) {
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getPrincipal();
@@ -56,8 +56,7 @@ public class InterestController {
                 .getPrincipal();
         interestService.unsubscribeInterest(interestId, userDetails.getUserId());
 
-        return ResponseEntity
-                .noContent()
+        return ResponseEntity.noContent()
                 .build();
     }
 

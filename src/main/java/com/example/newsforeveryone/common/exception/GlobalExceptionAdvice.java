@@ -13,6 +13,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class GlobalExceptionAdvice {
+
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ErrorResponse> handleBaseException(BaseException exception) {
         return ResponseEntity

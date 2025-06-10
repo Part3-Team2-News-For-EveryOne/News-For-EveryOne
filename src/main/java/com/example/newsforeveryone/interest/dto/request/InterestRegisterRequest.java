@@ -8,12 +8,11 @@ import java.util.List;
 
 public record InterestRegisterRequest(
         @NotBlank
-        @JsonProperty("interestName")
+        @JsonProperty("name")
         String name,
 
         @NotEmpty
         @JsonProperty("keywords")
         List<String> keywords
-
 ) {
 }

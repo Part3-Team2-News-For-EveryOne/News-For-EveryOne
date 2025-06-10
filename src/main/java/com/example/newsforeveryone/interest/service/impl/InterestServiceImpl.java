@@ -50,13 +50,11 @@ public class InterestServiceImpl implements InterestService {
         Interest interest = new Interest(interestRegisterRequest.name());
         Interest savedInterest = interestRepository.save(interest);
 
-        //
         List<Keyword> keywords = keywordService.registerKeyword(interestRegisterRequest.keywords(), threshold);
         List<InterestKeyword> interestKeywords = keywords.stream()
                 .map(keyword -> new InterestKeyword(interest, keyword))
                 .toList();
         interestKeywordRepository.saveAll(interestKeywords);
-        //
 
         List<String> keywordNames = keywords.stream().map(Keyword::getName).toList();
         return InterestResult.fromEntity(savedInterest, keywordNames, null);
@@ -67,16 +65,14 @@ public class InterestServiceImpl implements InterestService {
     public CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest, long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
-
         List<Interest> interests = getInterests(interestSearchRequest);
-
         boolean hasNext = interests.size() > interestSearchRequest.limit();
         List<Interest> slicedInterests = getSlicedInterest(interests, hasNext, interestSearchRequest.limit());
         Map<Interest, List<String>> groupedKeywordsByInterest = interestKeywordRepository.groupKeywordsByInterest(slicedInterests);
 
         return interestMapper.toCursorPageResponse(
                 groupedKeywordsByInterest,
-                interestSearchRequest.keyword(),
+                convertWord(interestSearchRequest),
                 interestSearchRequest.orderBy(),
                 user,
                 hasNext
@@ -93,13 +89,20 @@ public class InterestServiceImpl implements InterestService {
 
     private List<Interest> getInterests(InterestSearchRequest interestSearchRequest) {
         return interestKeywordRepository.searchInterestByWordUsingCursor(
-                interestSearchRequest.keyword(),
+                convertWord(interestSearchRequest),
                 interestSearchRequest.orderBy(),
                 interestSearchRequest.direction(),
                 interestSearchRequest.cursor(),
                 interestSearchRequest.after(),
                 interestSearchRequest.limit()
         );
+    }
+
+    private String convertWord(InterestSearchRequest interestSearchRequest) {
+        if (interestSearchRequest.keyword() == null) {
+            return "";
+        }
+        return interestSearchRequest.keyword();
     }
 
     @Transactional
