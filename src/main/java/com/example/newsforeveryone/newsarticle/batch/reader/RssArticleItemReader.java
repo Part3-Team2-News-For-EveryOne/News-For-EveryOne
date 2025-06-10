@@ -1,11 +1,14 @@
 package com.example.newsforeveryone.newsarticle.batch.reader;
 
+import com.example.newsforeveryone.newsarticle.batch.dto.RawArticleDto;
 import com.example.newsforeveryone.newsarticle.batch.dto.RssRawArticleDto;
 import com.example.newsforeveryone.newsarticle.batch.parser.RssParser;
 import com.example.newsforeveryone.newsarticle.batch.parser.RssParserRegistry;
+import com.example.newsforeveryone.newsarticle.entity.SourceType;
 import com.example.newsforeveryone.newsarticle.repository.NewsArticleRepository;
 import com.example.newsforeveryone.newsarticle.repository.SourceRepository;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -21,10 +24,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Slf4j
-@Component
+@Component("rssReader")
 @StepScope
 @RequiredArgsConstructor
-public class RssArticleItemReader implements ItemReader<RssRawArticleDto> {
+public class RssArticleItemReader implements NewsItemReader {
 
   private final SourceRepository sourceRepository;
   private final RssParserRegistry parserRegistry;
@@ -40,16 +43,26 @@ public class RssArticleItemReader implements ItemReader<RssRawArticleDto> {
   }
 
   @Override
-  public RssRawArticleDto read() {
-    return iterator.hasNext() ? iterator.next() : null;
+  public RawArticleDto read(){
+    RssRawArticleDto rssRawArticleDto = iterator.hasNext() ? iterator.next() : null;
+
+    // naverAPI와 rss의 step, process, writer 공용을 위해
+    if(rssRawArticleDto == null) {
+      return null;
+    }
+    return new RawArticleDto(
+        rssRawArticleDto.sourceName(),
+        rssRawArticleDto.link(),
+        rssRawArticleDto.title(),
+        rssRawArticleDto.summary(),
+        rssRawArticleDto.publishedAt(),
+        Collections.emptySet()
+    );
   }
 
-
   private List<RssRawArticleDto> fetchRss() {
-    List<String> feedUrls = sourceRepository.findAllFeedUrl()
-        .orElseThrow(() -> new IllegalArgumentException("RSS URL이 존재하지 않습니다."));
-    // log
-    feedUrls.forEach(url -> log.info("Loaded feedUrl: {}", url));
+    List<String> feedUrls = sourceRepository.findAllFeedUrlByType(SourceType.RSS)
+        .orElseThrow(() -> new IllegalArgumentException("RSS 타입의 피드가 없습니다."));
 
     List<RssRawArticleDto> allArticles = new ArrayList<>();
 

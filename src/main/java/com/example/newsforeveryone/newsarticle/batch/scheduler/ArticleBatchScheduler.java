@@ -17,7 +17,7 @@ public class ArticleBatchScheduler {
   private final JobLauncher jobLauncher;
   private final Job articleCollectJob;
 
-  @Scheduled(cron = "0 0 * * * *") // 매 정시
+  @Scheduled(cron = "0 * * * * *") // 매 정시
   public void runJob() throws Exception {
     JobParameters params = new JobParametersBuilder()
         .addLong("run.id", System.currentTimeMillis())

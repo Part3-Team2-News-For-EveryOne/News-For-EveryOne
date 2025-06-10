@@ -24,6 +24,7 @@ spring:
   batch:
     job:
       enabled: true
+      # names: rssJob, naverJob
     jdbc:
       initialize-schema: always
 
@@ -34,3 +35,9 @@ logging:
       hibernate.sql: DEBUG
       springframework.data: DEBUG
     com.example.newsforeveryone : INFO
+
+# naver API 기사 인증 정보
+naver:
+  client:
+    id: ${NAVER_CLIENT_ID}
+    secret: ${NAVER_CLIENT_SECRET}

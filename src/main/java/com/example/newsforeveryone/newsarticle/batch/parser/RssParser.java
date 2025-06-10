@@ -26,8 +26,6 @@ public interface RssParser {
     try{
       Document document = fetchDocument(feedUrl, restTemplate);
       NodeList items = document.getElementsByTagName("item");
-      System.out.println("Yonhap feed = " + feedUrl + " → root element = " + document.getDocumentElement().getNodeName());
-
       return parseDocument(document);
     } catch(Exception ex){
       ex.printStackTrace();
@@ -37,6 +35,7 @@ public interface RssParser {
 
   // catch문을 대신 함
   @SneakyThrows
+  // xml파일에서 document생성
   default Document fetchDocument(String feedUrl, RestTemplate restTemplate) {
     Resource resource = restTemplate.getForObject(feedUrl, Resource.class);
     if(resource == null){
@@ -58,9 +57,7 @@ public interface RssParser {
 
     for (int i = 0; i < items.getLength(); i++) {
       Element item = (Element) items.item(i);
-
       RssRawArticleDto dto = mapItem(item);
-
       if (dto != null) {
         result.add(dto);
       }

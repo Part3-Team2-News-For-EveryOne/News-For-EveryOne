@@ -1,0 +1,17 @@
+# VCS
+.git
+
+# 빌드 아웃풋
+/build
+/.gradle
+
+# IDE
+.idea
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+docker-compose.yml
+Dockerfile
