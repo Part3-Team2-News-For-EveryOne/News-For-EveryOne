@@ -7,5 +7,10 @@ import java.util.Map;
 
 public interface InterestKeywordCustom {
 
-    Map<Interest, List<String>> searchByWord(String keyword, String orderBy, String direction, String cursor, String after, Integer limit);
+    List<Interest> searchInterestByWordUsingCursor(String keyword, String orderBy, String direction, String cursor, String after, Integer limit);
+
+    Map<Interest, List<String>> groupKeywordsByInterest(List<Interest> InterestsWithWord);
+
+    Long countSearchInterest(String word, List<Interest> keywordInterestIds);
+
 }

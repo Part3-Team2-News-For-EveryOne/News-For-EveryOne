@@ -13,6 +13,7 @@ import com.example.newsforeveryone.interest.entity.Subscription;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
 import com.example.newsforeveryone.interest.exception.InterestAlreadyExistException;
 import com.example.newsforeveryone.interest.exception.InterestNotFoundException;
+import com.example.newsforeveryone.interest.mapper.InterestMapper;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
@@ -36,6 +37,7 @@ public class InterestServiceImpl implements InterestService {
     private final InterestKeywordRepository interestKeywordRepository;
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final InterestMapper interestMapper;
 
     @Transactional
     @Override
@@ -53,14 +55,41 @@ public class InterestServiceImpl implements InterestService {
                 .toList();
         interestKeywordRepository.saveAll(interestKeywords);
 
-        return InterestResult.fromEntity(savedInterest, keywords, null);
+        List<String> keywordNames = keywords.stream().map(Keyword::getName).toList();
+        return InterestResult.fromEntity(savedInterest, keywordNames, null);
     }
 
-    // TODO: 6/8/25 보류
     @Transactional(readOnly = true)
     @Override
-    public CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest) {
-        Map<Interest, List<String>> interestListMap = interestKeywordRepository.searchByWord(
+    public CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest, long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 없습니다."));
+
+        List<Interest> interests = getInterests(interestSearchRequest);
+        boolean hasNext = interests.size() > interestSearchRequest.limit();
+
+        List<Interest> slicedInterests = getSlicedInterest(interests, hasNext, interestSearchRequest.limit());
+        Map<Interest, List<String>> groupedKeywordsByInterest = interestKeywordRepository.groupKeywordsByInterest(slicedInterests);
+
+        return interestMapper.toCursorPageResponse(
+                groupedKeywordsByInterest,
+                interestSearchRequest.keyword(),
+                interestSearchRequest.orderBy(),
+                user,
+                hasNext
+        );
+    }
+
+    private List<Interest> getSlicedInterest(List<Interest> interests, boolean hasNext, int limit) {
+        if (hasNext) {
+            return interests.subList(0, limit);
+        }
+
+        return interests;
+    }
+
+    private List<Interest> getInterests(InterestSearchRequest interestSearchRequest) {
+        return interestKeywordRepository.searchInterestByWordUsingCursor(
                 interestSearchRequest.keyword(),
                 interestSearchRequest.orderBy(),
                 interestSearchRequest.direction(),
@@ -68,8 +97,6 @@ public class InterestServiceImpl implements InterestService {
                 interestSearchRequest.after(),
                 interestSearchRequest.limit()
         );
-
-        return null;
     }
 
     @Transactional
@@ -130,7 +157,8 @@ public class InterestServiceImpl implements InterestService {
                 .toList();
         interestKeywordRepository.saveAll(nextInterestKeywords);
 
-        return InterestResult.fromEntity(interest, keywords, subscriptionRepository.existsById(new SubscriptionId(interestId, user.getId())));
+        List<String> keywordNames = keywords.stream().map(Keyword::getName).toList();
+        return InterestResult.fromEntity(interest, keywordNames, subscriptionRepository.existsById(new SubscriptionId(interestId, user.getId())));
     }
 
 }

@@ -42,4 +42,5 @@ public class SubscriptionId implements Serializable {
         result = 31 * result + (userId != null ? userId.hashCode() : 0);
         return result;
     }
+
 }

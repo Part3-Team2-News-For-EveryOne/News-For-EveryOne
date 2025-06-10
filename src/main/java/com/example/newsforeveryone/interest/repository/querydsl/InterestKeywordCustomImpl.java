@@ -9,10 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -21,7 +18,23 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Map<Interest, List<String>> searchByWord(
+    public Long countSearchInterest(
+            String word,
+            List<Interest> keywordMatchedInterests
+    ) {
+        QInterest interest = QInterest.interest;
+
+        return Objects.requireNonNullElse(
+                queryFactory
+                        .select(interest.count())
+                        .from(interest)
+                        .where(interest.in(keywordMatchedInterests).or(interest.name.containsIgnoreCase(word)))
+                        .fetchOne(), 0L
+        );
+    }
+
+    @Override
+    public List<Interest> searchInterestByWordUsingCursor(
             String word,
             String orderBy,
             String direction,
@@ -33,31 +46,28 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
         QInterest interest = QInterest.interest;
         QKeyword keyword = QKeyword.keyword;
 
-        List<Keyword> keywordIds = queryFactory
-                .select(keyword)
-                .from(keyword)
-                .where(keyword.name.containsIgnoreCase(word))
-                .fetch();
-        List<Interest> keywordInterestIds = queryFactory
-                .selectDistinct(interestKeyword.interest)
-                .from(interestKeyword)
-                .where(interestKeyword.keyword.in(keywordIds))
-                .fetch();
+        List<Interest> keywordMatchedInterests = getInterestsInKeyword(word, interestKeyword, keyword);
 
-        List<Interest> InterestsWithWord = queryFactory
+        return queryFactory
                 .select(interest)
                 .from(interest)
-                .where(
-                        (interest.in(keywordInterestIds)
-                                .or(interest.name.containsIgnoreCase(word)))
-                                .and(cursorCondition(cursor, after, orderBy, direction, interest))
-                )
-                .orderBy(
-                        getPrimaryOrder(orderBy, direction, interest),
-                        getSecondaryOrder(direction, interest)
-                )
-                .limit(limit)
+                .where((interest.in(keywordMatchedInterests).or(interest.name.containsIgnoreCase(word)))
+                        .and(cursorCondition(cursor, after, orderBy, direction, interest)))
+                .orderBy(getPrimaryOrder(orderBy, direction, interest),
+                        getSecondaryOrder(direction, interest))
+                .limit(limit + 1)
                 .fetch();
+    }
+
+    @Override
+    public Map<Interest, List<String>> groupKeywordsByInterest(List<Interest> InterestsWithWord) {
+        if (InterestsWithWord == null) {
+            return new LinkedHashMap<>();
+        }
+
+        QInterestKeyword interestKeyword = QInterestKeyword.interestKeyword;
+        QInterest interest = QInterest.interest;
+        QKeyword keyword = QKeyword.keyword;
 
         List<Tuple> result = queryFactory
                 .select(interest, keyword.name)
@@ -66,6 +76,11 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
                 .innerJoin(interestKeyword.keyword, keyword)
                 .where(interest.in(InterestsWithWord))
                 .fetch();
+
+        return groupInterests(InterestsWithWord, interest, keyword, result);
+    }
+
+    private Map<Interest, List<String>> groupInterests(List<Interest> InterestsWithWord, QInterest interest, QKeyword keyword, List<Tuple> result) {
         Map<Interest, List<String>> interestKeywordMap = new LinkedHashMap<>();
         for (Interest interestWithWord : InterestsWithWord) {
             interestKeywordMap.put(interestWithWord, new ArrayList<>());
@@ -77,8 +92,21 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
                 interestKeywordMap.get(interest1).add(keywordName);
             }
         }
-
         return interestKeywordMap;
+    }
+
+    private List<Interest> getInterestsInKeyword(String word, QInterestKeyword interestKeyword, QKeyword keyword) {
+        List<Keyword> keywordIds = queryFactory
+                .select(keyword)
+                .from(keyword)
+                .where(keyword.name.containsIgnoreCase(word))
+                .fetch();
+
+        return queryFactory
+                .selectDistinct(interestKeyword.interest)
+                .from(interestKeyword)
+                .where(interestKeyword.keyword.in(keywordIds))
+                .fetch();
     }
 
     private BooleanBuilder cursorCondition(String cursor, String after, String orderBy, String direction, QInterest interest) {

@@ -21,17 +21,13 @@ public record InterestResult(
 
     public static InterestResult fromEntity(
             Interest interest,
-            List<Keyword> keywords,
+            List<String> keywords,
             Boolean subscribedByMe
     ) {
-        List<String> convertedKeywords = keywords.stream()
-                .map(Keyword::getName)
-                .toList();
-
         return new InterestResult(
                 interest.getId(),
                 interest.getName(),
-                convertedKeywords,
+                keywords,
                 interest.getSubscriberCount(),
                 subscribedByMe
         );

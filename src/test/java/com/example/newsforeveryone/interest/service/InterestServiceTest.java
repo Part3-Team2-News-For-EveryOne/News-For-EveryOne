@@ -21,13 +21,19 @@ import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 class InterestServiceTest extends IntegrationTestSupport {
 
@@ -79,36 +85,116 @@ class InterestServiceTest extends IntegrationTestSupport {
                 .isInstanceOf(InterestAlreadyExistException.class);
     }
 
-    @Transactional
+//    @Transactional
+//    @DisplayName("관심사와 키워드로 조회하면, 부분 일치하는 데이터를 반환합니다.")
+//    @Test
+//    void getInterests_SearchInterestAndKeyWord() {
+//        // given
+//        User savedUser = userRepository.save(new User("", "", ""));
+//        Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
+//        Interest savedNextInterest = saveInterestAndKeyword("러닝", List.of("한강"));
+//        InterestSearchRequest interestSearchRequest = new InterestSearchRequest(
+//                "러닝",
+//                "name",
+//                "DESC",
+//                null,
+//                null,
+//                2
+//        );
+//
+//        // when
+//        CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest, savedUser.getId());
+//
+//        // then
+//        SoftAssertions.assertSoftly(softly -> {
+//            softly.assertThat(interests)
+//                    .extracting(CursorPageInterestResponse::hasNext, CursorPageInterestResponse::nextCursor,
+//                            CursorPageInterestResponse::nextAfter, CursorPageInterestResponse::totalElements)
+//                    .containsExactlyInAnyOrder(false, savedNextInterest.getName(), savedNextInterest.getCreatedAt().toString(), 2);
+//            softly.assertThat(interests.contents())
+//                    .extracting(InterestResult::id)
+//                    .containsExactlyInAnyOrder(savedInterest.getId(), savedNextInterest.getId());
+//        });
+//    }
+//
+//
+//    @Transactional
+//    @DisplayName("관심사와 키워드로 조회하면, 부분 일치하는 데이터를 반환합니다.")
+//    @Test
+//    void getInterests_SearchInterestAndKeyWord_Other() {
+//        // given
+//        User savedUser = userRepository.save(new User("", "", ""));
+//        Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
+//        Interest savedNextInterest = saveInterestAndKeyword("러닝", List.of("한강"));
+//        InterestSearchRequest interestSearchRequest = new InterestSearchRequest(
+//                "러닝",
+//                "name",
+//                "DESC",
+//                null,
+//                null,
+//                1
+//        );
+//
+//        // when
+//        CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest, savedUser.getId());
+//
+//        // then
+//        SoftAssertions.assertSoftly(softly -> {
+//            softly.assertThat(interests)
+//                    .extracting(CursorPageInterestResponse::hasNext, CursorPageInterestResponse::nextCursor,
+//                            CursorPageInterestResponse::nextAfter, CursorPageInterestResponse::totalElements)
+//                    .containsExactlyInAnyOrder(true, savedInterest.getName(), savedInterest.getCreatedAt().toString(), 1);
+//            softly.assertThat(interests.contents())
+//                    .extracting(InterestResult::id)
+//                    .containsExactlyInAnyOrder(savedInterest.getId());
+//        });
+//    }
+
     @DisplayName("관심사와 키워드로 조회하면, 부분 일치하는 데이터를 반환합니다.")
-    @Test
-    void getInterests_SearchInterestAndKeyWord() {
+    @ParameterizedTest(name = "{index} => size={0}, expectedHasNext={1}, expectedIds={2}")
+    @MethodSource("provideInterestSearchArguments")
+    @Transactional
+    void getInterests_SearchInterestAndKeyWord_Parameterized(int size, boolean expectedHasNext, List<String> expectedNames, String expectedCursorInterestName) {
         // given
+        User savedUser = userRepository.save(new User("", "", ""));
         Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
         Interest savedNextInterest = saveInterestAndKeyword("러닝", List.of("한강"));
+        Map<String, Interest> nameToInterest = Map.of(
+                savedInterest.getName(), savedInterest,
+                savedNextInterest.getName(), savedNextInterest
+        );
+
         InterestSearchRequest interestSearchRequest = new InterestSearchRequest(
-                savedInterest.getName(),
+                "러닝",
                 "name",
                 "DESC",
                 null,
                 null,
-                1
+                size
         );
 
         // when
-        CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest);
+        CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest, savedUser.getId());
 
         // then
         SoftAssertions.assertSoftly(softly -> {
-            softly.assertThat(interests)
-                    .extracting(CursorPageInterestResponse::hasNext, CursorPageInterestResponse::nextCursor,
-                            CursorPageInterestResponse::nextAfter, CursorPageInterestResponse::totalElements)
-                    .containsExactlyInAnyOrder(true, savedNextInterest.getName(), savedNextInterest.getCreatedAt(), 2);
+            softly.assertThat(interests.hasNext()).isEqualTo(expectedHasNext);
+            softly.assertThat(interests.totalElements()).isEqualTo(2);
+            softly.assertThat(interests.nextCursor()).isEqualTo(nameToInterest.get(expectedCursorInterestName).getName());
+            softly.assertThat(interests.nextAfter()).isEqualTo(nameToInterest.get(expectedCursorInterestName).getCreatedAt().toString());
             softly.assertThat(interests.contents())
-                    .extracting(InterestResult::id)
-                    .containsExactlyInAnyOrder(savedInterest.getId());
+                    .extracting(InterestResult::interestName)
+                    .containsExactlyInAnyOrderElementsOf(expectedNames);
         });
     }
+
+    private static Stream<Arguments> provideInterestSearchArguments() {
+        return Stream.of(
+                Arguments.of(2, false, List.of("러닝머신", "러닝"), "러닝"),
+                Arguments.of(1, true, List.of("러닝머신"), "러닝머신")
+        );
+    }
+
 
     @Transactional
     @DisplayName("사용자가 관심사를 구독합니다.")

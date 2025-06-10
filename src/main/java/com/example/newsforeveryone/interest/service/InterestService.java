@@ -11,7 +11,7 @@ public interface InterestService {
 
     InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest, double threshold);
 
-    CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest);
+    CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest, long userId);
 
     SubscriptionResult subscribeInterest(long interestId, long userId);
 
