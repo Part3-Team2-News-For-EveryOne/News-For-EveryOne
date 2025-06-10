@@ -33,7 +33,6 @@ public class UserController {
 
   private final UserService userService;
   private final AuthenticationManager authenticationManager;
-  private final UserRepository userRepository;
   private final UserMapper userMapper;
 
   @PostMapping

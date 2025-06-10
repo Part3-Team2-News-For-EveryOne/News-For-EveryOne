@@ -1,7 +1,11 @@
 package com.example.newsforeveryone;
 
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
 
 @SpringBootTest
-public class IntegrationTestSupport {
+@ActiveProfiles("test")
+public class IntegrationTestSupport extends IntegrationTestContainerSupport {
 }
+
