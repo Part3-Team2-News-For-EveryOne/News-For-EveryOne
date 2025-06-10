@@ -21,7 +21,6 @@ import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -84,71 +83,6 @@ class InterestServiceTest extends IntegrationTestSupport {
         Assertions.assertThatThrownBy(() -> interestService.registerInterest(interestRegisterRequest, 0.8))
                 .isInstanceOf(InterestAlreadyExistException.class);
     }
-
-//    @Transactional
-//    @DisplayName("관심사와 키워드로 조회하면, 부분 일치하는 데이터를 반환합니다.")
-//    @Test
-//    void getInterests_SearchInterestAndKeyWord() {
-//        // given
-//        User savedUser = userRepository.save(new User("", "", ""));
-//        Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
-//        Interest savedNextInterest = saveInterestAndKeyword("러닝", List.of("한강"));
-//        InterestSearchRequest interestSearchRequest = new InterestSearchRequest(
-//                "러닝",
-//                "name",
-//                "DESC",
-//                null,
-//                null,
-//                2
-//        );
-//
-//        // when
-//        CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest, savedUser.getId());
-//
-//        // then
-//        SoftAssertions.assertSoftly(softly -> {
-//            softly.assertThat(interests)
-//                    .extracting(CursorPageInterestResponse::hasNext, CursorPageInterestResponse::nextCursor,
-//                            CursorPageInterestResponse::nextAfter, CursorPageInterestResponse::totalElements)
-//                    .containsExactlyInAnyOrder(false, savedNextInterest.getName(), savedNextInterest.getCreatedAt().toString(), 2);
-//            softly.assertThat(interests.contents())
-//                    .extracting(InterestResult::id)
-//                    .containsExactlyInAnyOrder(savedInterest.getId(), savedNextInterest.getId());
-//        });
-//    }
-//
-//
-//    @Transactional
-//    @DisplayName("관심사와 키워드로 조회하면, 부분 일치하는 데이터를 반환합니다.")
-//    @Test
-//    void getInterests_SearchInterestAndKeyWord_Other() {
-//        // given
-//        User savedUser = userRepository.save(new User("", "", ""));
-//        Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
-//        Interest savedNextInterest = saveInterestAndKeyword("러닝", List.of("한강"));
-//        InterestSearchRequest interestSearchRequest = new InterestSearchRequest(
-//                "러닝",
-//                "name",
-//                "DESC",
-//                null,
-//                null,
-//                1
-//        );
-//
-//        // when
-//        CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest, savedUser.getId());
-//
-//        // then
-//        SoftAssertions.assertSoftly(softly -> {
-//            softly.assertThat(interests)
-//                    .extracting(CursorPageInterestResponse::hasNext, CursorPageInterestResponse::nextCursor,
-//                            CursorPageInterestResponse::nextAfter, CursorPageInterestResponse::totalElements)
-//                    .containsExactlyInAnyOrder(true, savedInterest.getName(), savedInterest.getCreatedAt().toString(), 1);
-//            softly.assertThat(interests.contents())
-//                    .extracting(InterestResult::id)
-//                    .containsExactlyInAnyOrder(savedInterest.getId());
-//        });
-//    }
 
     @DisplayName("관심사와 키워드로 조회하면, 부분 일치하는 데이터를 반환합니다.")
     @ParameterizedTest(name = "{index} => size={0}, expectedHasNext={1}, expectedIds={2}")
@@ -253,7 +187,15 @@ class InterestServiceTest extends IntegrationTestSupport {
         interestService.unsubscribeInterest(savedInterest.getId(), savedUser.getId());
 
         // then
-        Assertions.assertThat(subscriptionRepository.findById(new SubscriptionId(savedInterest.getId(), savedUser.getId()))).isEmpty();
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(subscriptionRepository.findById(new SubscriptionId(savedInterest.getId(), savedUser.getId())))
+                    .isEmpty();
+            softly.assertThat(interestRepository.findById(savedInterest.getId()))
+                    .isPresent()
+                    .get()
+                    .extracting(Interest::getSubscriberCount)
+                    .isEqualTo(0);
+        });
     }
 
     @Transactional

@@ -41,7 +41,7 @@ class InterestKeywordCustomTest extends IntegrationTestSupport {
         Interest savedFirstInterest = saveInterestAndKeyword("천", List.of("군산", "서울"));
         Interest savedSecondInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
         Interest savedThridInterest = saveInterestAndKeyword("러닝", List.of("면목천", "면목"));
-        savedFirstInterest.addSubscriberCount(1);
+        savedFirstInterest.updateSubscriberCount(1);
         interestRepository.save(savedFirstInterest);
         String afterSubCursor = getAfter(after, savedFirstInterest);
 

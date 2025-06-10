@@ -107,7 +107,7 @@ public class InterestServiceImpl implements InterestService {
         Interest interest = interestRepository.findById(interestId)
                 .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
         Subscription saveSubscription = subscriptionRepository.save(new Subscription(interest, user.getId()));
-        interest.addSubscriberCount(1);
+        interest.updateSubscriberCount(1);
         interestRepository.save(interest);
 
         List<InterestKeyword> interestKeywords = interestKeywordRepository.findByInterest_Id(interestId);
@@ -125,10 +125,12 @@ public class InterestServiceImpl implements InterestService {
         if (!userRepository.existsById(userId)) {
             throw new IllegalArgumentException("해당 유저가 없습니다.");
         }
-        if (!interestRepository.existsById(interestId)) {
-            throw new InterestNotFoundException(Map.of("interest-id", interestId));
-        }
+        Interest interest = interestRepository.findById(interestId)
+                .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
+
         subscriptionRepository.deleteById(new SubscriptionId(interestId, userId));
+        interest.updateSubscriberCount(-1);
+        interestRepository.save(interest);
     }
 
     @Transactional

@@ -27,7 +27,7 @@ public class Interest extends BaseEntity {
         this.name = name;
     }
 
-    public void addSubscriberCount(int count) {
+    public void updateSubscriberCount(int count) {
         this.subscriberCount = this.subscriberCount + count;
     }
 

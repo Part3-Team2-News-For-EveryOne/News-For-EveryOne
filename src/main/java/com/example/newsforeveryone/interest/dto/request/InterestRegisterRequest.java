@@ -14,5 +14,6 @@ public record InterestRegisterRequest(
         @NotEmpty
         @JsonProperty("keywords")
         List<String> keywords
+
 ) {
 }
