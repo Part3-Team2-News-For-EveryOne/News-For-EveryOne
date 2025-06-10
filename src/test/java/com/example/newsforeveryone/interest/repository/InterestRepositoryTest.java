@@ -1,5 +1,6 @@
 package com.example.newsforeveryone.interest.repository;
 
+import com.example.newsforeveryone.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.entity.Interest;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
@@ -12,8 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 
-@SpringBootTest
-class InterestRepositoryTest {
+class InterestRepositoryTest extends IntegrationTestSupport {
 
     @Autowired
     private InterestRepository interestRepository;

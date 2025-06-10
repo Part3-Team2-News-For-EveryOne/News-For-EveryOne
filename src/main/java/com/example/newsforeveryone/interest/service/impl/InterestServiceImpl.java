@@ -67,6 +67,7 @@ public class InterestServiceImpl implements InterestService {
                 .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
         List<Interest> interests = getInterests(interestSearchRequest);
         boolean hasNext = interests.size() > interestSearchRequest.limit();
+
         List<Interest> slicedInterests = getSlicedInterest(interests, hasNext, interestSearchRequest.limit());
         Map<Interest, List<String>> groupedKeywordsByInterest = interestKeywordRepository.groupKeywordsByInterest(slicedInterests);
 

@@ -9,13 +9,16 @@ import com.example.newsforeveryone.interest.dto.response.CursorPageInterestRespo
 import com.example.newsforeveryone.interest.service.InterestService;
 import com.example.newsforeveryone.user.config.auth.CustomUserDetails;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
+@Validated
 @RequestMapping("/api/interests")
 public class InterestController {
 
@@ -30,10 +33,18 @@ public class InterestController {
     }
 
     @GetMapping
-    public ResponseEntity<CursorPageInterestResponse<InterestResult>> getAllInterests(@Valid @ModelAttribute InterestSearchRequest interestSearchRequest) {
+    public ResponseEntity<CursorPageInterestResponse<InterestResult>> getAllInterests(
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam @NotBlank String orderBy,
+            @RequestParam @NotBlank String direction,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) String after,
+            @RequestParam(defaultValue = "50") Integer limit
+    ) {
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getPrincipal();
+        InterestSearchRequest interestSearchRequest = new InterestSearchRequest(keyword, orderBy, direction, cursor, after, limit);
         CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest, userDetails.getUserId());
 
         return ResponseEntity.ok(interests);

@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static org.junit.Assert.assertTrue;
+
 class InterestServiceTest extends IntegrationTestSupport {
 
     @Autowired
@@ -85,11 +87,11 @@ class InterestServiceTest extends IntegrationTestSupport {
                 .isInstanceOf(InterestAlreadyExistException.class);
     }
 
-    @DisplayName("관심사와 키워드로 조회하면, 부분 일치하는 데이터를 반환합니다.")
-    @ParameterizedTest(name = "{index} => size={0}, expectedHasNext={1}, expectedIds={2}")
-    @MethodSource("provideInterestSearchArguments")
     @Transactional
-    void getInterests_SearchInterestAndKeyWord_Parameterized(int size, boolean expectedHasNext, List<String> expectedNames, String expectedCursorInterestName) {
+    @DisplayName("관심사와 키워드로 조회하면, 부분적으로 일치하는 데이터를 반환합니다.")
+    @MethodSource("provideInterestSearchArguments")
+    @ParameterizedTest
+    void getInterests_SearchInterestAndKeyWord_Parameterized(int limit, boolean expectedHasNext, String expectedCursorInterestName, List<String> expectedNames) {
         // given
         User savedUser = userRepository.save(new User("", "", ""));
         Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
@@ -105,7 +107,7 @@ class InterestServiceTest extends IntegrationTestSupport {
                 "DESC",
                 null,
                 null,
-                size
+                limit
         );
 
         // when
@@ -119,17 +121,16 @@ class InterestServiceTest extends IntegrationTestSupport {
             softly.assertThat(interests.nextAfter()).isEqualTo(nameToInterest.get(expectedCursorInterestName).getCreatedAt().toString());
             softly.assertThat(interests.contents())
                     .extracting(InterestResult::interestName)
-                    .containsExactlyInAnyOrderElementsOf(expectedNames);
+                    .containsExactlyElementsOf(expectedNames);
         });
     }
 
     private static Stream<Arguments> provideInterestSearchArguments() {
         return Stream.of(
-                Arguments.of(2, false, List.of("러닝머신", "러닝"), "러닝"),
-                Arguments.of(1, true, List.of("러닝머신"), "러닝머신")
+                Arguments.of(2, false, "러닝", List.of("러닝머신", "러닝")),
+                Arguments.of(1, true, "러닝머신", List.of("러닝머신"))
         );
     }
-
 
     @Transactional
     @DisplayName("사용자가 관심사를 구독합니다.")
