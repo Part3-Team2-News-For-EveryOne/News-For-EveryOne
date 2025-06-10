@@ -43,6 +43,9 @@ out/
 ## log
 .logs
 
+## querydsl
+/src/main/generated/
+
 Dockerfile
 build.gradle
 docker-compose.yml

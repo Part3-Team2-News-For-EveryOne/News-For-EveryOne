@@ -35,6 +35,8 @@ public class ArticleCollectJobConfig {
   private final ItemReader<RawArticleDto> naverReader;
 
   private final ItemProcessor<RawArticleDto, NewsArticle> processor;
+
+  @Qualifier("articleItemWriter")
   private final ItemWriter<NewsArticle> writer;
 
   @Bean
@@ -47,6 +49,7 @@ public class ArticleCollectJobConfig {
         .build();
   }
 
+  @Qualifier("collectRssStep")
   @Bean
   public Step collectRssStep() {
     StepBuilder builder = new StepBuilder("collectRssStep", jobRepository);

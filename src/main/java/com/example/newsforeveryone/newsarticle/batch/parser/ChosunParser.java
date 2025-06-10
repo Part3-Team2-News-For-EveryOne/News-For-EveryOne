@@ -44,7 +44,7 @@ public class ChosunParser implements RssParser {
     Instant publishedAt = parseDate(getText(item, "pubDate"));
 
     return new RssRawArticleDto(
-        "chosun",
+        "조선RSS",
         link,
         title,
         description,

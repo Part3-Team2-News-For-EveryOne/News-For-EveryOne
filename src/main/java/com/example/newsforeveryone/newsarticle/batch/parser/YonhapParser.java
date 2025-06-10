@@ -37,7 +37,7 @@ public class YonhapParser implements RssParser{
 
 
     return new RssRawArticleDto(
-        "yonhap",
+        "연합RSS",
         link,
         title,
         summary,

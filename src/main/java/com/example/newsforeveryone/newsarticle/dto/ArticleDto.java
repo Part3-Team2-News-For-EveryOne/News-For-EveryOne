@@ -1,5 +1,6 @@
 package com.example.newsforeveryone.newsarticle.dto;
 
+import com.querydsl.core.annotations.QueryProjection;
 import java.time.Instant;
 
 public record ArticleDto(
@@ -13,5 +14,6 @@ public record ArticleDto(
     Long viewCount,
     Boolean viewedByMe
 ) {
-
+  @QueryProjection
+  public ArticleDto {}
 }

@@ -18,4 +18,9 @@ public interface SourceRepository extends JpaRepository<Source, Long> {
 
   @Query("SELECT s.feedUrl FROM Source s")
   Optional<List<String>> findAllFeedUrl();
+
+  Optional<Source> findByName(String sourceName);
+
+  @Query("SELECT s.name FROM Source s ORDER BY s.name ASC")
+  List<String> findAllNames();
 }

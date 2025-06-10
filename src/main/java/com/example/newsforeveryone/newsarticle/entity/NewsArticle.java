@@ -1,23 +1,13 @@
 package com.example.newsforeveryone.newsarticle.entity;
 
 import com.example.newsforeveryone.common.entity.SoftDeletableEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.Instant;
 import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import org.hibernate.annotations.Formula;
 
+@Setter
 @Getter
 @ToString
 @Builder
