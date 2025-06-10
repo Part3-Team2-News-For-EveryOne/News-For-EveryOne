@@ -22,7 +22,7 @@ public class User extends SoftDeletableEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq_gen")
-  @SequenceGenerator(name = "user_seq_gen", sequenceName = "user_id_seq", allocationSize = 50)
+  @SequenceGenerator(name = "user_seq_gen", sequenceName = "users_id_seq", allocationSize = 50)
   private Long id;
 
 

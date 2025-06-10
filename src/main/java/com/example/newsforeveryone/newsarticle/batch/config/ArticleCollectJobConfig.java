@@ -1,6 +1,7 @@
 package com.example.newsforeveryone.newsarticle.batch.config;
 
 import com.example.newsforeveryone.newsarticle.batch.dto.RssRawArticleDto;
+import com.example.newsforeveryone.newsarticle.dto.ArticleDto;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -36,7 +37,7 @@ public class ArticleCollectJobConfig {
   @Qualifier("collectRssStep")
   @Bean
   public Step collectRssStep(
-      ItemReader<RssRawArticleDto> reader, //ArticleDto로 읽어와지는건가?
+      ItemReader<RssRawArticleDto> reader,
       ItemProcessor<RssRawArticleDto, NewsArticle> processor,
       @Qualifier("articleItemWriter") ItemWriter<NewsArticle> writer
   ) {

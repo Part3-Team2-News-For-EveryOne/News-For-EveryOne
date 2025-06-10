@@ -20,5 +20,6 @@ public class ArticleView {
   @EmbeddedId
   private ArticleViewId id;
 
+  @Column(updatable = false)
   private Instant viewedAt;
 }

@@ -38,7 +38,7 @@ public class HankyungParser implements RssParser {
     String summary = title;
 
     return new RssRawArticleDto(
-        "hankyung",
+        "한경RSS",
         link,
         title,
         summary,
