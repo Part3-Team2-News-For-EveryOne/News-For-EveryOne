@@ -6,6 +6,7 @@ import com.example.newsforeveryone.comment.dto.CommentListResponse;
 import com.example.newsforeveryone.comment.dto.CommentResponse;
 import com.example.newsforeveryone.comment.dto.CommentUpdateRequest;
 import com.example.newsforeveryone.comment.entity.Comment;
+import com.example.newsforeveryone.comment.entity.CommentLike;
 import com.example.newsforeveryone.comment.mapper.CommentMapper;
 import com.example.newsforeveryone.comment.repository.CommentLikeRepository;
 import com.example.newsforeveryone.comment.repository.CommentRepository;
@@ -14,9 +15,9 @@ import com.example.newsforeveryone.common.exception.ErrorCode;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -40,8 +41,8 @@ public class BasicCommentService implements CommentService {
       Long articleId, String orderBy, String direction,
       String cursor, Long after, Integer limit, Long requestUserId) {
 
-    var params = buildQueryParams(articleId, orderBy, cursor, after, limit, requestUserId, direction);
-    var comments = fetchComments(params);
+    CommentQueryParams params = buildQueryParams(articleId, orderBy, cursor, after, limit, requestUserId, direction);
+    List<Comment> comments = fetchComments(params);
     boolean hasNext = comments.size() > limit;
     if (hasNext) comments = comments.subList(0, limit);
 
@@ -60,8 +61,8 @@ public class BasicCommentService implements CommentService {
   @Transactional
   public CommentResponse createComment(CommentCreateRequest req, Long requestUserId) {
     validateUser(req.userId(), requestUserId);
-    var entity = commentMapper.toEntity(req);
-    var saved = commentRepository.save(entity);
+    Comment entity = commentMapper.toEntity(req);
+    Comment saved = commentRepository.save(entity);
     String nickname = getUserNickname(saved.getUserId());
     return commentMapper.toResponse(saved, nickname, false);
   }
@@ -69,11 +70,11 @@ public class BasicCommentService implements CommentService {
   @Override
   @Transactional
   public CommentLikeResponse likeComment(Long commentId, Long requestUserId) {
-    var comment = getCommentOrThrow(commentId);
+    Comment comment = getCommentOrThrow(commentId);
     if (commentLikeRepository.existsByCommentIdAndLikedUserId(commentId, requestUserId))
-      throw new BaseException(ErrorCode.INVALID_REQUEST);
+      throw new BaseException(ErrorCode.COMMENT_LIKE_DUPLICATED);
 
-    var like = commentLikeRepository.save(commentMapper.toCommentLike(commentId, requestUserId));
+    CommentLike like = commentLikeRepository.save(commentMapper.toCommentLike(commentId, requestUserId));
     comment.addLike(like);
     String nickname = getUserNickname(comment.getUserId());
     return commentMapper.toCommentLikeResponse(comment, nickname);
@@ -82,9 +83,9 @@ public class BasicCommentService implements CommentService {
   @Override
   @Transactional
   public void unlikeComment(Long commentId, Long requestUserId) {
-    var comment = getCommentOrThrow(commentId);
-    var like = commentLikeRepository.findByCommentIdAndLikedUserId(commentId, requestUserId)
-        .orElseThrow(() -> new BaseException(ErrorCode.INVALID_REQUEST));
+    Comment comment = getCommentOrThrow(commentId);
+    CommentLike like = commentLikeRepository.findByCommentIdAndLikedUserId(commentId, requestUserId)
+        .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_LIKE_NOT_FOUND));
     commentLikeRepository.delete(like);
     comment.removeLike(like);
   }
@@ -92,11 +93,14 @@ public class BasicCommentService implements CommentService {
   @Override
   @Transactional
   public CommentResponse updateComment(Long commentId, CommentUpdateRequest req, Long requestUserId) {
-    var comment = getCommentOrThrow(commentId);
-    validateOwner(comment, requestUserId);
+    Comment comment = getCommentOrThrow(commentId);
+    if (comment.getDeletedAt() != null)
+      throw new BaseException(ErrorCode.COMMENT_ALREADY_DELETED);
+    if (!comment.getUserId().equals(requestUserId))
+      throw new BaseException(ErrorCode.COMMENT_UPDATE_FORBIDDEN);
 
     comment.updateContent(req.content());
-    var updated = commentRepository.save(comment);
+    Comment updated = commentRepository.save(comment);
     boolean likedByMe = commentLikeRepository.existsByCommentIdAndLikedUserId(commentId, requestUserId);
     String nickname = getUserNickname(updated.getUserId());
     return commentMapper.toResponse(updated, nickname, likedByMe);
@@ -105,8 +109,12 @@ public class BasicCommentService implements CommentService {
   @Override
   @Transactional
   public void softDeleteComment(Long commentId, Long requestUserId) {
-    var comment = getCommentOrThrow(commentId);
-    validateOwner(comment, requestUserId);
+    Comment comment = getCommentOrThrow(commentId);
+    if (comment.getDeletedAt() != null)
+      throw new BaseException(ErrorCode.COMMENT_ALREADY_DELETED);
+    if (!comment.getUserId().equals(requestUserId))
+      throw new BaseException(ErrorCode.COMMENT_DELETE_FORBIDDEN);
+
     comment.setDeletedAt(Instant.now());
     commentRepository.save(comment);
   }
@@ -114,14 +122,15 @@ public class BasicCommentService implements CommentService {
   @Override
   @Transactional
   public void hardDeleteComment(Long commentId, Long requestUserId) {
-    var comment = getCommentOrThrow(commentId);
-    validateOwner(comment, requestUserId);
+    Comment comment = getCommentOrThrow(commentId);
+    if (!comment.getUserId().equals(requestUserId))
+      throw new BaseException(ErrorCode.COMMENT_DELETE_FORBIDDEN);
 
     commentLikeRepository.deleteByCommentIdAndLikedUserId(commentId, requestUserId);
     commentRepository.delete(comment);
   }
 
-  // Private Methods
+  // 내부 메서드
 
   private CommentQueryParams buildQueryParams(
       Long articleId, String orderBy, String cursor, Long after,
@@ -149,8 +158,8 @@ public class BasicCommentService implements CommentService {
   private Set<Long> fetchLikedIds(List<Comment> comments, Long userId) {
     if (userId == null || comments.isEmpty()) return Set.of();
     List<Long> ids = comments.stream().map(Comment::getId).toList();
-    return commentLikeRepository.findLikedCommentIdsByUserIdAndCommentIds(userId, ids).stream()
-        .collect(Collectors.toSet());
+    return new HashSet<>(
+        commentLikeRepository.findLikedCommentIdsByUserIdAndCommentIds(userId, ids));
   }
 
   private CommentResponse toResponseWithLike(Comment c, Set<Long> likedIds) {
@@ -164,11 +173,7 @@ public class BasicCommentService implements CommentService {
 
   private Comment getCommentOrThrow(Long id) {
     return commentRepository.findByIdAndDeletedAtIsNull(id)
-        .orElseThrow(() -> new BaseException(ErrorCode.INVALID_REQUEST));
-  }
-
-  private void validateOwner(Comment c, Long userId) {
-    if (!c.getUserId().equals(userId)) throw new BaseException(ErrorCode.UNAUTHORIZED_USER_ACCESS);
+        .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_NOT_FOUND));
   }
 
   private String getUserNickname(Long userId) {
