@@ -23,10 +23,10 @@ spring:
       mode: never
   batch:
     job:
-      enabled: false
+      # 잡 실행 허용
+      enabled: true
     jdbc:
       initialize-schema: always
-
 
 logging:
   level:
