@@ -15,3 +15,10 @@ spring:
   sql:
     init:
       mode: never
+
+newsforeveryone:
+  s3:
+    access-key: dummy-test-key
+    secret-key: dummy-test-secret
+    region: dummy-region
+    bucket: dummy-bucket

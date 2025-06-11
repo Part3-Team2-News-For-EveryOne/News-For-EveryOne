@@ -1,0 +1,20 @@
+# VCS
+.git
+
+# 빌드 아웃풋
+/build
+/.gradle
+
+# IDE
+.idea
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+docker-compose.yml
+Dockerfile
+
+# QueryDSL generated sources (if you must keep them locally)
+src/main/java/com/example/**/Q*.java

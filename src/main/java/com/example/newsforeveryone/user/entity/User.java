@@ -8,9 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-
 import java.time.Instant;
-
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;

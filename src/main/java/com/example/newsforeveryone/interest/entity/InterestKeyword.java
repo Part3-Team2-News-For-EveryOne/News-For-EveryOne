@@ -31,5 +31,4 @@ public class InterestKeyword extends BaseEntity {
         this.keyword = keyword;
         this.id = new InterestKeywordId(interest.getId(), keyword.getId());
     }
-
 }
