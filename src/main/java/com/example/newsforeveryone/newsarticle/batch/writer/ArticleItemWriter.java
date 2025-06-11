@@ -10,9 +10,11 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-@Component("articleItemWriter")
+@Primary
+@Component("ArticleItemWriter")
 @RequiredArgsConstructor
 public class ArticleItemWriter implements ItemWriter<NewsArticle> {
 

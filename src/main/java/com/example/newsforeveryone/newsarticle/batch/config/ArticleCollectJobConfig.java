@@ -36,7 +36,7 @@ public class ArticleCollectJobConfig {
 
   private final ItemProcessor<RawArticleDto, NewsArticle> processor;
 
-  @Qualifier("articleItemWriter")
+  @Qualifier("ArticleItemWriter")
   private final ItemWriter<NewsArticle> writer;
 
   @Bean
