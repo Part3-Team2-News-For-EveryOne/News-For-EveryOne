@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - Feature/CPG-29-CI-CD-GitHub-Actions
+      - main
 
 jobs:
   test:
