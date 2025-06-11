@@ -2,6 +2,7 @@ package com.example.newsforeveryone.newsarticle.batch.dto;
 
 import java.time.Instant;
 import java.util.Objects;
+import lombok.Getter;
 
 public record RssRawArticleDto(
     String sourceName,

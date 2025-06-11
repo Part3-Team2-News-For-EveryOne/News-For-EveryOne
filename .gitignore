@@ -42,3 +42,11 @@ out/
 
 ## log
 .logs
+
+## querydsl
+/src/main/generated/
+
+## docker files
+Dockerfile
+build.gradle
+docker-compose.yml

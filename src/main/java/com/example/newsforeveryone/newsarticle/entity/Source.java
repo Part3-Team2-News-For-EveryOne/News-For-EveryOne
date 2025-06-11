@@ -24,4 +24,7 @@ public class Source extends BaseEntity {
   @Column(name = "feed_url", length = 512, unique = true, nullable = false)
   private String feedUrl;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "type", nullable = false)
+  private SourceType type;
 }

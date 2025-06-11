@@ -5,22 +5,25 @@ spring:
     enabled: true
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         use_sql_comments: true
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc.batch_size: 50
+        order_inserts: true
+        order_updates: true
+        generate_statistics: true
     open-in-view: false
     generate-ddl: false
   sql:
     init:
       mode: never
-  # 이거 어찌할꼬
   batch:
     job:
-      enabled: true
+      enabled: false
     jdbc:
       initialize-schema: always
 
@@ -31,3 +34,17 @@ logging:
       hibernate.sql: DEBUG
       springframework.data: DEBUG
     com.example.newsforeveryone : INFO
+
+newsforeveryone:
+  storage:
+    s3:
+      access-key: ${AWS_S3_ACCESS_KEY}
+      secret-key: ${AWS_S3_SECRET_KEY}
+      region: ${AWS_S3_REGION}
+      bucket: ${AWS_S3_BUCKET}
+
+# naver API 기사 인증 정보
+naver:
+  client:
+    id: ${NAVER_CLIENT_ID}
+    secret: ${NAVER_CLIENT_SECRET}

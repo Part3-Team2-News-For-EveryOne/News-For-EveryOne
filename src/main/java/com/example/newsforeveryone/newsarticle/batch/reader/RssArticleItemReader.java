@@ -1,32 +1,39 @@
 package com.example.newsforeveryone.newsarticle.batch.reader;
 
+import com.example.newsforeveryone.newsarticle.batch.dto.RawArticleDto;
 import com.example.newsforeveryone.newsarticle.batch.dto.RssRawArticleDto;
 import com.example.newsforeveryone.newsarticle.batch.parser.RssParser;
 import com.example.newsforeveryone.newsarticle.batch.parser.RssParserRegistry;
+import com.example.newsforeveryone.newsarticle.entity.SourceType;
 import com.example.newsforeveryone.newsarticle.repository.NewsArticleRepository;
 import com.example.newsforeveryone.newsarticle.repository.SourceRepository;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
-@Component
+@Slf4j
+@Component("rssReader")
 @StepScope
 @RequiredArgsConstructor
-public class RssArticleItemReader implements ItemReader<RssRawArticleDto> {
+public class RssArticleItemReader implements NewsItemReader {
 
   private final SourceRepository sourceRepository;
   private final RssParserRegistry parserRegistry;
   private final NewsArticleRepository newsArticleRepository;
-
+  // 새로 추가
+  private final RestTemplate restTemplate;
   private Iterator<RssRawArticleDto> iterator;
 
   @BeforeStep
@@ -36,24 +43,36 @@ public class RssArticleItemReader implements ItemReader<RssRawArticleDto> {
   }
 
   @Override
-  public RssRawArticleDto read() {
-    return iterator.hasNext() ? iterator.next() : null;
+  public RawArticleDto read(){
+    RssRawArticleDto rssRawArticleDto = iterator.hasNext() ? iterator.next() : null;
+
+    // naverAPI와 rss의 step, process, writer 공용을 위해
+    if(rssRawArticleDto == null) {
+      return null;
+    }
+    return new RawArticleDto(
+        rssRawArticleDto.sourceName(),
+        rssRawArticleDto.link(),
+        rssRawArticleDto.title(),
+        rssRawArticleDto.summary(),
+        rssRawArticleDto.publishedAt(),
+        Collections.emptySet()
+    );
   }
 
-
   private List<RssRawArticleDto> fetchRss() {
-    List<String> feedUrls = sourceRepository.findAllFeedUrl()
-        .orElseThrow(() -> new IllegalArgumentException("RSS URL이 존재하지 않습니다."));
+    List<String> feedUrls = sourceRepository.findAllFeedUrlByType(SourceType.RSS)
+        .orElseThrow(() -> new IllegalArgumentException("RSS 타입의 피드가 없습니다."));
 
     List<RssRawArticleDto> allArticles = new ArrayList<>();
 
     for (String feedUrl : feedUrls) {
       try {
         RssParser parser = parserRegistry.getParser(feedUrl);
-        List<RssRawArticleDto> article = parser.parse(feedUrl);
-        allArticles.addAll(article);
+        List<RssRawArticleDto> articleDtos = parser.parse(feedUrl, restTemplate);
+        allArticles.addAll(articleDtos);
       } catch (Exception e) {
-        throw new RuntimeException(e);
+        throw new RuntimeException("Rss Parsing 중 오류 발생: " + feedUrl, e);
       }
     }
     return filterDuplicatedArticles(allArticles);

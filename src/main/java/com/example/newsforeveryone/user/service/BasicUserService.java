@@ -43,18 +43,6 @@ public class BasicUserService implements UserService {
   }
 
   @Override
-  public UserResponse login(UserLoginRequest request) {
-    // Spring security 인증 매니저로 인증
-    Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
-    SecurityContextHolder.getContext().setAuthentication(authentication);
-
-    // 인증된 사용자 정보 조회
-    User user = userRepository.findByEmailAndDeletedAtIsNull(request.email())
-        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
-    return userMapper.toResponse(user);
-  }
-
-  @Override
   @Transactional
   public void softDeleteUser(Long userId, Long requestUserId) {
     validateUserPermission(userId, requestUserId);
@@ -94,6 +82,12 @@ public class BasicUserService implements UserService {
     return userMapper.toResponseList(users);
   }
 
+  @Override
+  public User findUserByEmail(String email) {
+    return userRepository.findByEmailAndDeletedAtIsNull(email)
+        .orElseThrow(() -> new BaseException(ErrorCode.INVALID_CREDENTIALS));
+  }
+
   // ======== 내부 메서드 ========
   private void validateEmailNotExists(String email) {
     if (userRepository.existsByEmailAndDeletedAtIsNull(email)) {
@@ -103,11 +97,6 @@ public class BasicUserService implements UserService {
 
   private String encodePassword(String password) {
     return passwordEncoder.encode(password);
-  }
-
-  private User findUserByEmail(String email) {
-    return userRepository.findByEmailAndDeletedAtIsNull(email)
-        .orElseThrow(() -> new BaseException(ErrorCode.INVALID_CREDENTIALS));
   }
 
   private void validateUserPermission(Long userId, Long requestUserId) {

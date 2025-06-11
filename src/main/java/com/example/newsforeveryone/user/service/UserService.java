@@ -10,11 +10,11 @@ import java.util.List;
 public interface UserService {
 
   UserResponse signup(UserSignupRequest request);
-  UserResponse login(UserLoginRequest request);
   void softDeleteUser(Long userId, Long requestUserId);
   void hardDeleteUser(Long userId, Long requestUserId);
   UserResponse updateUserNickname(Long userId, UserUpdateRequest request, Long requestUserId);
   User findActiveUserById(Long userId);
   List<UserResponse> findAllActiveUsers();
+  User findUserByEmail(String email);
 
 }

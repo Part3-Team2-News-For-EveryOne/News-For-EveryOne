@@ -10,10 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import java.io.InputStream;
 import java.util.List;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.Document;
@@ -31,60 +27,29 @@ public class ChosunParser implements RssParser {
   }
 
   @Override
-  public List<RssRawArticleDto> parse(String url) {
-    try {
-      Resource resource = restTemplate.getForObject(url, Resource.class);
-      if (resource == null) return List.of();
+  public RssRawArticleDto mapItem(Element item) {
+    String title = getText(item, "title");
+    String link = getText(item, "link");
+    String html = getText(item, "content:encoded");
 
-      InputStream stream = resource.getInputStream();
-
-      Document doc = DocumentBuilderFactory.newInstance()
-          .newDocumentBuilder()
-          .parse(stream);
-      doc.getDocumentElement().normalize();;
-
-      NodeList items = doc.getElementsByTagName("item");
-      List<RssRawArticleDto> articles = new ArrayList<>();
-
-      for (int i = 0; i < items.getLength(); i++) {
-        Element item = (Element) items.item(i);
-
-        String title = getText(item, "title");
-        String link = getText(item, "link");
-
-        String html = getText(item, "content:encoded");
-
-        int start = html.indexOf("<p>");
-        int end = html.indexOf("</p>");
-        String description = (start != -1 && end != -1) ? html.substring(start + 3, end) : "";
-
-        String author = getText(item, "dc:creator");
-        Instant publishedAt = parseDate(getText(item, "pubDate"));
-
-        articles.add(new RssRawArticleDto(
-            "chosun", link, title, description, author, publishedAt
-        ));
-      }
-
-      return articles;
-    } catch (Exception e) {
-      e.printStackTrace();
-      return List.of();
+    String description = "";
+    if(html != null) {
+      int start = html.indexOf("<p>");
+      int end = html.indexOf("</p>");
+      if(start != -1 && end != -1)
+        description = (start != -1 && end != -1) ? html.substring(start + 3, end) : "";
     }
-  }
 
-  private String getText(Element parent, String tagName) {
-    NodeList list = parent.getElementsByTagName(tagName);
-    if (list.getLength() == 0 || list.item(0).getTextContent() == null) return null;
-    return list.item(0).getTextContent().trim();
-  }
+    String author = getText(item, "dc:creator");
+    Instant publishedAt = parseDate(getText(item, "pubDate"));
 
-  private Instant parseDate(String raw) {
-    try {
-      return ZonedDateTime.parse(raw, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
-    } catch (Exception e) {
-      return Instant.now(); // fallback
-    }
+    return new RssRawArticleDto(
+        "조선RSS",
+        link,
+        title,
+        description,
+        author,
+        publishedAt
+    );
   }
-
 }

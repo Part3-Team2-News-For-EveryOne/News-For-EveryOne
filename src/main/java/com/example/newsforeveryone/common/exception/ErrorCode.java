@@ -11,6 +11,8 @@ public enum ErrorCode {
   USER_NOT_FOUND(404, "U03", "사용자를 찾을 수 없습니다"),
   DUPLICATE_EMAIL(409, "U04", "이미 존재하는 이메일입니다"),
 
+  ARTICLE_NOT_FOUND(404,"A03", "기사를 찾을 수 없습니다"),
+
   INVALID_REQUEST(400, "C01", "잘못된 요청입니다"),
   INTERNAL_SERVER_ERROR(500, "C02", "서버 내부 오류가 발생했습니다");
 
