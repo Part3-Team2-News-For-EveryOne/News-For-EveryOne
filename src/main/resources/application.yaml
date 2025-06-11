@@ -23,8 +23,7 @@ spring:
       mode: never
   batch:
     job:
-      # 잡 실행 허용
-      enabled: true
+      enabled: false
     jdbc:
       initialize-schema: always
 
