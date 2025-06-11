@@ -19,17 +19,18 @@ public class ArticleProcessor implements ItemProcessor<RawArticleDto, NewsArticl
   @Override
   public NewsArticle process(RawArticleDto item) {
       String cleanedSummary = cleanHtmlContent(item.description());
+      String cleanedTitle = cleanHtmlContent(item.title());
 
-      if (cleanedSummary.isBlank()) {
+      if (cleanedSummary.isBlank() || cleanedTitle.isBlank()) {
           return null;
       }
 
-      String content = item.title() + " " + cleanedSummary;
+      String content = cleanedTitle + " " + cleanedSummary;
     Set<Long> matchedInterestIds = keywordInterestCache.findInterestIdsFromContent(content);
 
     return NewsArticle.builder()
         .sourceName(item.sourceName())
-        .title(item.title())
+        .title(cleanedTitle)
         .link(item.link())
         .summary(cleanedSummary)
         .publishedAt(item.publishedAt())
