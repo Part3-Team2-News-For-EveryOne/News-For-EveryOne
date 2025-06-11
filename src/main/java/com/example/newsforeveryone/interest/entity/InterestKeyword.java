@@ -1,6 +1,7 @@
 package com.example.newsforeveryone.interest.entity;
 
 import com.example.newsforeveryone.common.entity.BaseEntity;
+import com.example.newsforeveryone.interest.entity.id.InterestKeywordId;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -17,10 +18,12 @@ public class InterestKeyword extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("interestId")
+    @JoinColumn(name = "interest_id", nullable = false)
     private Interest interest;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("keywordId")
+    @JoinColumn(name = "keyword_id", nullable = false)
     private Keyword keyword;
 
     public InterestKeyword(Interest interest, Keyword keyword) {

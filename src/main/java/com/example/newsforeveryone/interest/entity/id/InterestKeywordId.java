@@ -1,6 +1,5 @@
-package com.example.newsforeveryone.interest.entity;
+package com.example.newsforeveryone.interest.entity.id;
 
-import jakarta.persistence.Access;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
 import lombok.Getter;

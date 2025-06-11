@@ -4,20 +4,21 @@ import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.SubscriptionResult;
 import com.example.newsforeveryone.interest.dto.request.InterestRegisterRequest;
 import com.example.newsforeveryone.interest.dto.request.InterestSearchRequest;
+import com.example.newsforeveryone.interest.dto.request.InterestUpdateRequest;
 import com.example.newsforeveryone.interest.dto.response.CursorPageInterestResponse;
 
 public interface InterestService {
 
-    CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest);
+    InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest, double threshold);
 
-    InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest);
+    CursorPageInterestResponse<InterestResult> getInterests(InterestSearchRequest interestSearchRequest, long userId);
 
     SubscriptionResult subscribeInterest(long interestId, long userId);
 
     void unsubscribeInterest(long interestId, long userId);
 
-    void deleteInterestById(long interestId);
+    void deleteInterest(long interestId);
 
-    InterestResult updateInterest(long interestId);
+    InterestResult updateKeywordInInterest(long interestId, long userId, InterestUpdateRequest interestUpdateRequest, double threshold);
 
 }

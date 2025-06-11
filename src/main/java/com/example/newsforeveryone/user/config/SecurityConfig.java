@@ -33,7 +33,8 @@ public class SecurityConfig {
     return http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/", "/index.html", "/favicon.ico", "/assets/index-*.js", "/assets/index-*.css", "/api/users", "/api/users/login").permitAll()  //회원가입, 로그인은 허용 경로
+            .requestMatchers("/", "/index.html", "/favicon.ico", "/assets/index-*.js", "/assets/index-*.css", "/api/users", "/api/users/login")
+                .permitAll()  //회원가입, 로그인은 허용 경로
             .anyRequest().authenticated())  //허용 경로를 제외한 모든 요청은 인증 필요
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
         .userDetailsService(userDetailService)

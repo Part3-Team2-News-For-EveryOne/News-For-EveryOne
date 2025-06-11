@@ -1,0 +1,44 @@
+services:
+  my-postgres-db:
+    image: postgres:15
+    container_name: my-postgres-db
+    ports:
+      - "${DB_PORT}:5432"
+    environment:
+      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data # 데이터 영속화
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro # 최초 실행 시, sql이 자동으로 실행(읽기 전용)(:ro)
+    restart: unless-stopped # 재시작 되어도 BinaryContentStorage 데이터가 유지되도록 한다.
+    env_file: [ .env ] # 환경 변수 분리
+
+  news-app:
+    build:
+      context: .
+      dockerfile: Dockerfile # Dockerfile 사용한다는 뜻
+    container_name: news-app
+    env_file: [ .env ] # .env 전체 주입한다는 뜻
+    environment:
+      SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE}"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://my-postgres-db:${DB_PORT}/${DB_NAME}"
+      SPRING_DATASOURCE_USERNAME: "${DB_USERNAME}"
+      SPRING_DATASOURCE_PASSWORD: "${DB_PASSWORD}"
+      BINARY_CONTENT_PATH:       "${BINARY_CONTENT_PATH}"
+      NAVER_CLIENT_ID:           "${NAVER_CLIENT_ID}"
+      NAVER_CLIENT_SECRET:       "${NAVER_CLIENT_SECRET}"
+      AWS_ACCESS_KEY_ID:         "${AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY:     "${AWS_SECRET_ACCESS_KEY}"
+      AWS_REGION:               "${AWS_REGION}"
+      S3_BUCKET_NAME:            "${S3_BUCKET_NAME}"
+      STORAGE_TYPE: s3
+    depends_on:
+      - my-postgres-db
+    ports:
+      - "8081:80" # host:container
+    volumes:
+      - binary-content:${BINARY_CONTENT_PATH}
+volumes:
+  postgres-data:
+  binary-content:

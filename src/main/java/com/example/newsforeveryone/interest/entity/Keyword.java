@@ -17,7 +17,7 @@ public class Keyword extends BaseEntity {
     @SequenceGenerator(name = "keyword_seq_gen", sequenceName = "keyword_id_seq", allocationSize = 50)
     private Long id;
 
-    @JoinColumn(name = "name", nullable = false, unique = true)
+    @JoinColumn(name = "interestName", nullable = false, unique = true)
     private String name;
 
     public Keyword(String name) {

@@ -33,8 +33,8 @@ public class UserController {
 
   private final UserService userService;
   private final AuthenticationManager authenticationManager;
-  private final UserRepository userRepository;
   private final UserMapper userMapper;
+  private final UserRepository userRepository;
 
   @PostMapping
   public ResponseEntity<UserResponse> signup(@Valid @RequestBody UserSignupRequest request) {
