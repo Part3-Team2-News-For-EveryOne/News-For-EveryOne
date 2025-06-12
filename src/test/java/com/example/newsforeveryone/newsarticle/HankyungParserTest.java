@@ -69,6 +69,7 @@ class HankyungParserTest {
             .newInstance()
             .newDocumentBuilder()
             .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+
         Element item = (Element) doc.getElementsByTagName("item").item(0);
 
         RssRawArticleDto dto = parser.mapItem(item);
@@ -109,9 +110,11 @@ class HankyungParserTest {
 
         List<RssRawArticleDto> result = parser.parse(FEED_URL, restTemplate);
 
-        assertEquals(2, result.size(), "두 개의 item이 파싱되어야 합니다.");
-        assertEquals("제목1", result.get(0).title());
-        assertEquals("http://link2", result.get(1).link());
+        assertAll("한경 파싱 결과 검증",
+            () -> assertEquals(2, result.size(), "두 개의 item이 파싱되어야 합니다."),
+            () -> assertEquals("제목1", result.get(0).title()),
+            () -> assertEquals("http://link2", result.get(1).link())
+        );
     }
 
     @Test

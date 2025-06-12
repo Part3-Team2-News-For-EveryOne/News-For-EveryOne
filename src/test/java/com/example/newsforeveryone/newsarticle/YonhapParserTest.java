@@ -23,6 +23,7 @@ import org.w3c.dom.Element;
 
 @ExtendWith(MockitoExtension.class)
 class YonhapParserTest {
+
     private YonhapParser yonhapParser;
 
     @Mock
@@ -101,9 +102,11 @@ class YonhapParserTest {
         List<RssRawArticleDto> list = yonhapParser.parse(FEED_URL, restTemplate);
 
         // item요소를 두개로 했으므로 list 크기도 2
-        assertEquals(2, list.size(), "아이템 2개가 파싱되어야 합니다.");
-        assertEquals("false title", list.get(0).title());
-        assertEquals("http://link2", list.get(1).link());
+        assertAll(
+            () -> assertEquals(2, list.size(), "아이템 2개가 파싱되어야 합니다."),
+            () -> assertEquals("false title", list.get(0).title()),
+            () -> assertEquals("http://link2", list.get(1).link())
+        );
     }
 
     // 외부 호출 실패 등으로 restTemplate.getForObject()가 null을 반환하는 상황 가정

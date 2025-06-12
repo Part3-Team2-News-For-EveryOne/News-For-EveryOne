@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
 @EnableJpaAuditing
-@EnableBatchProcessing
 public class NewsForEveryOneApplication {
     public static void main(String[] args) {
         SpringApplication.run(NewsForEveryOneApplication.class, args);

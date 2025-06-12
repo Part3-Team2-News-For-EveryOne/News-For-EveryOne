@@ -42,7 +42,6 @@ public class NewsArticleServiceImpl implements NewsArticleService {
   private final NewsArticleQueryRepository newsArticleQueryRepository;
   private final ArticleViewRepository articleViewRepository;
   private final SourceRepository sourceRepository;
-  private final FakeCommentRepository commentRepository;
   private final S3Client s3Client;
   private final ObjectMapper objectMapper;
 

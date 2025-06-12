@@ -21,7 +21,6 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
-@EnableBatchProcessing
 @RequiredArgsConstructor
 public class ArticleCollectJobConfig {
 
