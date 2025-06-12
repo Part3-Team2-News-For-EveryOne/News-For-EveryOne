@@ -34,10 +34,6 @@ public class NewsArticle extends SoftDeletableEntity {
   @Column(name = "summary")
   private String summary;
 
-//  @Formula("(SELECT COUNT(*) FROM article_view av WHERE av.article_id = id)") // N + 1!!!!
-  @Transient
-  private int viewCount;
-
   @Column(name = "published_at", nullable = false)
   private Instant publishedAt;
 

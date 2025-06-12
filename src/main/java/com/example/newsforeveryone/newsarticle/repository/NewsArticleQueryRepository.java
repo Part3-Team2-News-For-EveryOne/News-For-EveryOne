@@ -100,7 +100,7 @@ public class NewsArticleQueryRepository {
                 .exists()
         ))
         .from(newsArticle)
-        .join(newsArticleMetric).on(newsArticle.id.eq(newsArticleMetric.articleId))
+        .join(newsArticleMetric).on(newsArticle.id.eq(newsArticleMetric.id))
         .where(
             newsArticle.deletedAt.isNull(),
             hasKeyword(request.keyword()),

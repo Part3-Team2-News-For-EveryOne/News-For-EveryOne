@@ -10,7 +10,13 @@ public class NewsArticleMetric {
 
   @Id
   @Column(name = "article_id")
-  private Long articleId;
+  private Long id;
+
+  @OneToOne(fetch = FetchType.LAZY)
+  @MapsId
+  @JoinColumn(name = "article_id")
+  private NewsArticle newsArticle;
+
 
   @Column(name = "comment_count")
   private Long commentCount;
