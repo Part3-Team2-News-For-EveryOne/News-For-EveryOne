@@ -1,5 +1,6 @@
 package com.example.newsforeveryone.newsarticle.service;
 
+import com.example.newsforeveryone.comment.repository.CommentRepository;
 import com.example.newsforeveryone.common.exception.BaseException;
 import com.example.newsforeveryone.common.exception.ErrorCode;
 import com.example.newsforeveryone.newsarticle.dto.ArticleRestoreResultDto;
@@ -9,6 +10,9 @@ import com.example.newsforeveryone.newsarticle.dto.CursorPageResponseArticleDto;
 import com.example.newsforeveryone.newsarticle.entity.ArticleView;
 import com.example.newsforeveryone.newsarticle.entity.ArticleViewId;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
+import com.example.newsforeveryone.newsarticle.entity.NewsArticleMetric;
+import com.example.newsforeveryone.newsarticle.exception.ArticleMetricNotFoundException;
+import com.example.newsforeveryone.newsarticle.exception.ArticleNotFoundException;
 import com.example.newsforeveryone.newsarticle.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +46,9 @@ public class NewsArticleServiceImpl implements NewsArticleService {
   private final NewsArticleQueryRepository newsArticleQueryRepository;
   private final ArticleViewRepository articleViewRepository;
   private final SourceRepository sourceRepository;
+  private final NewsArticleMetricRepository newsArticleMetricRepository;
+  private final CommentRepository commentRepository;
+
   private final S3Client s3Client;
   private final ObjectMapper objectMapper;
 
@@ -53,14 +60,16 @@ public class NewsArticleServiceImpl implements NewsArticleService {
   @Transactional
   public ArticleViewDto createArticleView(Long articleId, Long userId) {
     NewsArticle article = newsArticleRepository.findById(articleId)
-        .orElseThrow(() -> new BaseException(
-            ErrorCode.ARTICLE_NOT_FOUND, Map.of("articleId", articleId)));
+        .orElseThrow(() -> new ArticleNotFoundException(Map.of("articleId", articleId)));
 
     ArticleViewId viewId = new ArticleViewId(articleId, userId);
     ArticleView articleView = new ArticleView(viewId, Instant.now());
     articleViewRepository.save(articleView);
 
-    long viewCount = articleViewRepository.countById_ArticleId(articleId);
+    long viewCount = newsArticleMetricRepository.findById(articleId)
+        .map(NewsArticleMetric::getViewCount)
+        .orElseThrow(() -> new ArticleMetricNotFoundException(Map.of("articleId", articleId)));
+
     long commentCount = commentRepository.countByArticleIdAndDeletedAtIsNull(articleId);
 
     return ArticleViewDto.from(article, articleView, commentCount, viewCount);
@@ -98,35 +107,37 @@ public class NewsArticleServiceImpl implements NewsArticleService {
         .filter(article -> !existingLinks.contains(article.getLink()))
         .toList();
 
-        // ---누락 기사 복구 수행 ----------------------------------------------------
-        if (!missingArticles.isEmpty()) {
-            missingArticles.forEach(article -> article.setId(null));
-            List<NewsArticle> saved = newsArticleRepository.saveAll(missingArticles);
-            List<Long> ids = saved.stream().map(NewsArticle::getId).toList();
-            log.info("{} missing articles have been restored", saved.size());
-            return new ArticleRestoreResultDto(Instant.now(), ids, (long) ids.size());
-        } else {
-            log.info("All articles already exist");
-            return new ArticleRestoreResultDto(Instant.now(), List.of(), 0L);
-        }
+    // ---누락 기사 복구 수행 ----------------------------------------------------
+    if (!missingArticles.isEmpty()) {
+      missingArticles.forEach(article -> article.setId(null));
+      List<NewsArticle> saved = newsArticleRepository.saveAll(missingArticles);
+      List<Long> ids = saved.stream().map(NewsArticle::getId).toList();
+      log.info("{} missing articles have been restored", saved.size());
+      return new ArticleRestoreResultDto(Instant.now(), ids, (long) ids.size());
+    } else {
+      log.info("All articles already exist");
+      return new ArticleRestoreResultDto(Instant.now(), List.of(), 0L);
     }
+  }
 
-    @Override
-    public void softDeleteArticle(Long articleId) {
-        NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
-                .orElseThrow(() -> new BaseException(ErrorCode.ARTICLE_NOT_FOUND, Map.of("articleId", articleId)));
-        matchingNewsArticle.setDeletedAt(Instant.now());
-        newsArticleRepository.save(matchingNewsArticle);
-        log.info("Article logically deleted. articleId: {}", articleId);
-    }
+  @Override
+  public void softDeleteArticle(Long articleId) {
+    NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
+        .orElseThrow(
+            () -> new BaseException(ErrorCode.ARTICLE_NOT_FOUND, Map.of("articleId", articleId)));
+    matchingNewsArticle.setDeletedAt(Instant.now());
+    newsArticleRepository.save(matchingNewsArticle);
+    log.info("Article logically deleted. articleId: {}", articleId);
+  }
 
-    @Override
-    public void hardDeleteArticle(Long articleId) {
-        NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
-                .orElseThrow(() -> new BaseException(ErrorCode.ARTICLE_NOT_FOUND, Map.of("articleId", articleId)));
-        newsArticleRepository.delete(matchingNewsArticle);
-        log.info("Article physically deleted. articleId: {}", articleId);
-    }
+  @Override
+  public void hardDeleteArticle(Long articleId) {
+    NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
+        .orElseThrow(
+            () -> new BaseException(ErrorCode.ARTICLE_NOT_FOUND, Map.of("articleId", articleId)));
+    newsArticleRepository.delete(matchingNewsArticle);
+    log.info("Article physically deleted. articleId: {}", articleId);
+  }
 
   // ===== 내부 메서드 =====
   private List<NewsArticle> getS3Backup(Instant from) {
@@ -140,17 +151,18 @@ public class NewsArticleServiceImpl implements NewsArticleService {
           .key(key)
           .build();
 
-            InputStream inputStream = s3Client.getObject(getObjectRequest);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-            List<NewsArticle> backupArticles = new ArrayList<>();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                backupArticles.add(objectMapper.readValue(line, NewsArticle.class));
-            }
-            return backupArticles;
-        } catch (Exception e) {
-            log.error("Failed to retrieve backup file", e);
-            throw new RuntimeException(e);
-        }
+      InputStream inputStream = s3Client.getObject(getObjectRequest);
+      BufferedReader reader = new BufferedReader(
+          new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+      List<NewsArticle> backupArticles = new ArrayList<>();
+      String line;
+      while ((line = reader.readLine()) != null) {
+        backupArticles.add(objectMapper.readValue(line, NewsArticle.class));
+      }
+      return backupArticles;
+    } catch (Exception e) {
+      log.error("Failed to retrieve backup file", e);
+      throw new RuntimeException(e);
     }
+  }
 }
