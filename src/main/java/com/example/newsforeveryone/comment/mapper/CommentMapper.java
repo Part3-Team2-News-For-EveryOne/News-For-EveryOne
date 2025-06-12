@@ -23,9 +23,9 @@ public class CommentMapper {
 
   public CommentResponse toResponse(Comment comment, String userNickname, boolean likedByMe) {
     return new CommentResponse(
-        comment.getId(),
-        comment.getArticleId(),
-        comment.getUserId(),
+        comment.getId().toString(),
+        comment.getArticleId().toString(),
+        comment.getUserId().toString(),
         userNickname,
         comment.getContent(),
         comment.getLikeCount(),
@@ -35,8 +35,8 @@ public class CommentMapper {
   }
 
   public CommentListResponse toListResponse(List<CommentResponse> comments, String nextCursor,
-      String nextAfter, Integer size, Long totalElements, boolean hasNext) {
-    return new CommentListResponse(comments, nextCursor, nextAfter, size, totalElements, hasNext);
+      boolean hasNext) {
+    return new CommentListResponse(comments, nextCursor, hasNext);
   }
 
   public CommentLike toCommentLike(Long commentId, Long userId) {
@@ -49,10 +49,10 @@ public class CommentMapper {
 
   public CommentLikeResponse toCommentLikeResponse(Comment comment, String userNickname) {
     return new CommentLikeResponse(
-        comment.getId(),
-        comment.getId(),
-        comment.getArticleId(),
-        comment.getUserId(),
+        comment.getId().toString(),
+        comment.getId().toString(),
+        comment.getArticleId().toString(),
+        comment.getUserId().toString(),
         userNickname,
         comment.getContent(),
         comment.getLikeCount(),

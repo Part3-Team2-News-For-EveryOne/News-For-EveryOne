@@ -5,10 +5,10 @@ import jakarta.validation.constraints.NotNull;
 
 public record CommentCreateRequest(
     @NotNull
-    Long articleId,
+    String articleId,
 
     @NotNull
-    Long userId,
+    String userId,
 
     @NotBlank
     String content
