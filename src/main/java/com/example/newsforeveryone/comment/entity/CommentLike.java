@@ -1,6 +1,6 @@
 package com.example.newsforeveryone.comment.entity;
 
-import com.example.newsforeveryone.comment.entity.Id.CommentLikeId;
+import com.example.newsforeveryone.comment.entity.id.CommentLikeId;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

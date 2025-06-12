@@ -54,7 +54,14 @@ public class BasicCommentService implements CommentService {
     String nextCursor = hasNext && !comments.isEmpty()
         ? comments.get(comments.size() - 1).getCreatedAt().toString()
         : null;
-    return commentMapper.toListResponse(responses, nextCursor, hasNext);
+
+    String nextAfter = hasNext && !comments.isEmpty()
+        ? comments.get(comments.size() - 1).getId().toString()
+        : null;
+
+    Long totalElements = getTotalCommentCount(articleId);
+
+    return commentMapper.toListResponse(responses, nextCursor, nextAfter, limit, totalElements, hasNext);
   }
 
   @Override
@@ -144,6 +151,10 @@ public class BasicCommentService implements CommentService {
         orderBy,
         direction
     );
+  }
+
+  private Long getTotalCommentCount(Long articleId) {
+    return commentRepository.countByArticleIdAndDeletedAtIsNull(articleId);
   }
 
   private List<Comment> fetchComments(CommentQueryParams p) {

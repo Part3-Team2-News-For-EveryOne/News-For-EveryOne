@@ -35,8 +35,8 @@ public class CommentMapper {
   }
 
   public CommentListResponse toListResponse(List<CommentResponse> comments, String nextCursor,
-      boolean hasNext) {
-    return new CommentListResponse(comments, nextCursor, hasNext);
+      String nextAfter, Integer size, Long totalElements, boolean hasNext) {
+    return new CommentListResponse(comments, nextCursor, nextAfter, size, totalElements, hasNext);
   }
 
   public CommentLike toCommentLike(Long commentId, Long userId) {

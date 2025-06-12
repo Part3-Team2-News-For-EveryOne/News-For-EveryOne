@@ -1,4 +1,4 @@
-package com.example.newsforeveryone.comment.entity.Id;
+package com.example.newsforeveryone.comment.entity.id;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
