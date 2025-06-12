@@ -1,7 +1,7 @@
 package com.example.newsforeveryone.comment.repository;
 
 import com.example.newsforeveryone.comment.entity.CommentLike;
-import com.example.newsforeveryone.comment.entity.id.CommentLikeId;
+import com.example.newsforeveryone.comment.entity.Id.CommentLikeId;
 import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
