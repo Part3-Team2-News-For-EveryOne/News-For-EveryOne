@@ -67,11 +67,18 @@ public class BasicCommentService implements CommentService {
   @Override
   @Transactional
   public CommentResponse createComment(CommentCreateRequest req, Long requestUserId) {
-    validateUser(req.userId(), requestUserId);
-    Comment entity = commentMapper.toEntity(req);
-    Comment saved = commentRepository.save(entity);
-    String nickname = getUserNickname(saved.getUserId());
-    return commentMapper.toResponse(saved, nickname, false);
+    try {
+      Long reqUserId = Long.parseLong(req.userId());
+      validateUser(reqUserId, requestUserId);
+
+      Comment entity = commentMapper.toEntity(req);
+      Comment saved = commentRepository.save(entity);
+      String nickname = getUserNickname(saved.getUserId());
+      return commentMapper.toResponse(saved, nickname, false);
+
+    } catch (NumberFormatException e) {
+      throw new BaseException(ErrorCode.UNAUTHORIZED_USER_ACCESS);
+    }
   }
 
   @Override
