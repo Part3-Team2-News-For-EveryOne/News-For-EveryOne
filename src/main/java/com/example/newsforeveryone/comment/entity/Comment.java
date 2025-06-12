@@ -41,6 +41,10 @@ public class Comment extends SoftDeletableEntity {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String content;
 
+  @Builder.Default
+  @Column(name = "like_count", nullable = false)
+  private Long likeCount = 0L;
+
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
   @JoinColumn(name = "comment_id")
   @Builder.Default
@@ -51,7 +55,15 @@ public class Comment extends SoftDeletableEntity {
   }
 
   public long getLikeCount() {
-    return likes != null ? likes.size() : 0;
+    return this.likeCount;
+  }
+
+  public void increaseLikeCount() {
+    this.likeCount++;
+  }
+
+  public void decreaseLikeCount() {
+    this.likeCount = Math.max(0L, this.likeCount - 1);
   }
 
   public void addLike(CommentLike commentLike) {
@@ -59,11 +71,13 @@ public class Comment extends SoftDeletableEntity {
       likes = new ArrayList<>();
     }
     likes.add(commentLike);
+    increaseLikeCount();
   }
 
   public void removeLike(CommentLike commentLike) {
     if (likes != null) {
       likes.remove(commentLike);
+      decreaseLikeCount();
     }
   }
 }
