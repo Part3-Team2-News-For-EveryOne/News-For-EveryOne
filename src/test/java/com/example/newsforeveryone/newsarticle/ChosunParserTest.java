@@ -60,7 +60,7 @@ class ChosunParserTest {
 
     // 각 필드 검증
     assertAll("조선일보 <item> 파싱 검증",
-        () -> assertEquals("chosun", dto.sourceName()),
+        () -> assertEquals("조선RSS", dto.sourceName()),
         () -> assertEquals("https://www.chosun.com/international/international_general/2025/06/04/N4I6UFSUVZCYNPCV6KMLHWII6Q/", dto.link()),
         () -> assertEquals("50m 상공서 안전장치 풀더니 “내려줘”... 패러세일링 하던 10대 추락사", dto.title()),
         () -> assertEquals("50m 상공서 안전장치 풀더니 “내려줘”... 패러세일링 하던 10대 추락사", dto.summary()),
