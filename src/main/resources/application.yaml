@@ -15,7 +15,7 @@ spring:
         jdbc.batch_size: 50
         order_inserts: true
         order_updates: true
-        generate_statistics: true
+        generate_statistics: false
     open-in-view: false
     generate-ddl: false
   sql:

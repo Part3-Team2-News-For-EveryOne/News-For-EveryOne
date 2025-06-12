@@ -55,11 +55,18 @@ public class InterestController {
         .getAuthentication()
         .getPrincipal();
     InterestSearchRequest interestSearchRequest = new InterestSearchRequest(keyword, orderBy,
-        direction, cursor, after, limit);
+        direction, cursor, after, adjustLimit(limit));
     CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(
         interestSearchRequest, userDetails.getUserId());
 
     return ResponseEntity.ok(interests);
+  }
+
+  private int adjustLimit(Integer limit) {
+    if (limit == null || limit < 50) {
+      return 50;
+    }
+    return limit;
   }
 
   @PostMapping("/{interestId}/subscriptions")

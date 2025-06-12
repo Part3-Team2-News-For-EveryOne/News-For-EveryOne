@@ -39,6 +39,7 @@ public class NotificationServiceImpl implements NotificationService {
   private final NotificationRepository notificationRepository;
   private final UserRepository userRepository;
 
+  @Transactional
   @Override
   public List<NotificationResult> createNotificationByInterest(
       List<ArticleInterestId> articleInterestIds) {
@@ -71,6 +72,7 @@ public class NotificationServiceImpl implements NotificationService {
     return interestIdToArticles;
   }
 
+  @Transactional
   @Override
   public NotificationResult createNotificationByComment(long authorId, long likerId,
       long commentId) {
@@ -92,8 +94,7 @@ public class NotificationServiceImpl implements NotificationService {
     validateIsEnrolledUser(userId);
 
     Instant cursor = parseCursor(notificationSearchRequest.cursor());
-    PageRequest pageRequest = PageRequest.of(0, notificationSearchRequest.limit(),
-        Sort.by("createdAt").descending());
+    PageRequest pageRequest = PageRequest.of(0, notificationSearchRequest.limit());
     Page<Notification> notifications = notificationRepository.findAllByUserIdWithCursorAsc(userId,
         cursor, pageRequest);
 
