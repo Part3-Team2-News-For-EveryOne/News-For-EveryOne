@@ -13,6 +13,7 @@ import com.example.newsforeveryone.comment.repository.CommentRepository;
 import com.example.newsforeveryone.comment.service.CommentService;
 import com.example.newsforeveryone.common.exception.BaseException;
 import com.example.newsforeveryone.common.exception.ErrorCode;
+import com.example.newsforeveryone.notification.service.NotificationService;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.time.Instant;
@@ -33,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentServiceImpl implements CommentService {
 
   private final CommentRepository commentRepository;
+  private final NotificationService notificationService;
   private final CommentLikeRepository commentLikeRepository;
   private final CommentMapper commentMapper;
   private final UserRepository userRepository;
@@ -85,6 +87,7 @@ public class CommentServiceImpl implements CommentService {
     commentRepository.save(comment);
 
     String nickname = getUserNickname(comment.getUserId());
+    notificationService.createNotificationByComment(comment.getUserId(), requestUserId, commentId);
     return commentMapper.toCommentLikeResponse(comment, nickname);
   }
 

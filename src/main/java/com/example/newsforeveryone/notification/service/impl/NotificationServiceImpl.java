@@ -1,8 +1,8 @@
 package com.example.newsforeveryone.notification.service.impl;
 
-import com.example.newsforeveryone.interest.entity.Interest;
-import com.example.newsforeveryone.interest.exception.InterestNotFoundException;
-import com.example.newsforeveryone.interest.repository.InterestRepository;
+import com.example.newsforeveryone.interest.entity.Subscription;
+import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
+import com.example.newsforeveryone.newsarticle.entity.ArticleInterestId;
 import com.example.newsforeveryone.notification.dto.NotificationResult;
 import com.example.newsforeveryone.notification.dto.request.NotificationSearchRequest;
 import com.example.newsforeveryone.notification.dto.response.CursorPageNotificationResponse;
@@ -15,8 +15,11 @@ import com.example.newsforeveryone.user.exception.UserNotFoundException;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -31,22 +34,41 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
-  private final InterestRepository interestRepository;
+  private final NotificationFactoryService notificationFactoryService;
+  private final SubscriptionRepository subscriptionRepository;
   private final NotificationRepository notificationRepository;
   private final UserRepository userRepository;
 
   @Override
-  public NotificationResult createNotificationByInterest(long userId, long interestId,
-      long count) {
-    validateIsEnrolledUser(userId);
-    Interest interest = interestRepository.findById(interestId)
-        .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
+  public List<NotificationResult> createNotificationByInterest(
+      List<ArticleInterestId> articleInterestIds) {
+    if (articleInterestIds == null) {
+      return List.of();
+    }
 
-    Notification notification = Notification.ofInterest(userId, interest.getId(),
-        interest.getName(), count);
-    Notification savedNotification = notificationRepository.save(notification);
+    Map<Long, List<Long>> interestToArticle = mappingInterestToArticle(articleInterestIds);
+    Set<Subscription> subscriptions = subscriptionRepository.findAllWithInterestByInterestIdIn(
+        interestToArticle.keySet());
+    List<Notification> notifications = notificationFactoryService.createNotifications(
+        interestToArticle, subscriptions);
 
-    return NotificationResult.FromEntity(savedNotification);
+    List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
+
+    return NotificationResult.FromEntity(savedNotifications);
+  }
+
+  private Map<Long, List<Long>> mappingInterestToArticle(
+      List<ArticleInterestId> articleInterestIds) {
+
+    Map<Long, List<Long>> interestIdToArticles = new HashMap<>();
+    for (ArticleInterestId articleInterestId : articleInterestIds) {
+      List<Long> articleIds = interestIdToArticles.getOrDefault(articleInterestId.getInterestId(),
+          new ArrayList<>());
+      articleIds.add(articleInterestId.getArticleId());
+      interestIdToArticles.put(articleInterestId.getInterestId(), articleIds);
+    }
+
+    return interestIdToArticles;
   }
 
   @Override

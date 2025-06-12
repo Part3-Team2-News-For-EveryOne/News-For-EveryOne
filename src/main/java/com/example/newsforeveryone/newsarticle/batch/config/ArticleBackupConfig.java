@@ -32,7 +32,6 @@ public class ArticleBackupConfig {
     private final PlatformTransactionManager transactionManager;
     private final NewsArticleRepository newsArticleRepository;
 
-
     @Bean
     public Job backupNewsArticleJob(Step backupNewsArticleStep) {
         return new JobBuilder("backupNewsArticleJob", jobRepository)

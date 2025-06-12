@@ -55,7 +55,6 @@ public class NewsArticleServiceImpl implements NewsArticleService {
   @Value("${newsforeveryone.storage.s3.bucket}")
   private String bucket;
 
-
   @Override
   @Transactional
   public ArticleViewDto createArticleView(Long articleId, Long userId) {

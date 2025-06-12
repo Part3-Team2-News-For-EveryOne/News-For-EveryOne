@@ -5,6 +5,7 @@ import com.example.newsforeveryone.newsarticle.entity.ArticleInterestId;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
 import com.example.newsforeveryone.newsarticle.repository.ArticleInterestRepository;
 import com.example.newsforeveryone.newsarticle.repository.NewsArticleRepository;
+import com.example.newsforeveryone.notification.service.NotificationService;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class ArticleItemWriter implements ItemWriter<NewsArticle> {
 
   private final NewsArticleRepository newsArticleRepository;
   private final ArticleInterestRepository articleInterestRepository;
+  private final NotificationService notificationService;
 
   @Override
   public void write(Chunk<? extends NewsArticle> chunk) throws Exception {
@@ -32,11 +34,22 @@ public class ArticleItemWriter implements ItemWriter<NewsArticle> {
     for (NewsArticle savedArticle : savedArticles) {
       if (savedArticle.getInterestIds() != null) {
         for (Long interestId : savedArticle.getInterestIds()) {
-          articleInterestsToSave.add(new ArticleInterest(new ArticleInterestId(savedArticle.getId(), interestId)));
+          articleInterestsToSave.add(
+              new ArticleInterest(new ArticleInterestId(savedArticle.getId(), interestId)));
         }
       }
     }
-    articleInterestRepository.saveAll(articleInterestsToSave);
+    List<ArticleInterest> articleInterests = articleInterestRepository.saveAll(
+        articleInterestsToSave);
+    sendNotification(articleInterests);
   }
+
+  private void sendNotification(List<ArticleInterest> articleInterests) {
+    List<ArticleInterestId> articleInterestIds = articleInterests.stream()
+        .map(ArticleInterest::getId)
+        .toList();
+    notificationService.createNotificationByInterest(articleInterestIds);
+  }
+
 }
 
