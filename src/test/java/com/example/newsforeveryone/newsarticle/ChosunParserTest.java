@@ -63,7 +63,7 @@ class ChosunParserTest {
         () -> assertEquals("조선RSS", dto.sourceName()),
         () -> assertEquals("https://www.chosun.com/international/international_general/2025/06/04/N4I6UFSUVZCYNPCV6KMLHWII6Q/", dto.link()),
         () -> assertEquals("50m 상공서 안전장치 풀더니 “내려줘”... 패러세일링 하던 10대 추락사", dto.title()),
-        () -> assertEquals("50m 상공서 안전장치 풀더니 “내려줘”... 패러세일링 하던 10대 추락사", dto.summary()),
+        () -> assertEquals("몬테네그로 부드바 해변에서 패러세일링을 하던 세르비아 출신 10대 여성이 공중에서 안전장비를 풀고 50m 높이에서 추락해 사망하는 사고가 발생했다. 짧은 요약입니다.", dto.summary()),
         () -> assertEquals("이혜진 기자", dto.author()),
         () -> assertNotNull(dto.publishedAt(), "발행일시가 null이 아니어야 함")
     );

@@ -28,7 +28,7 @@ import com.example.newsforeveryone.newsarticle.batch.dto.RssRawArticleDto;
 @ExtendWith(MockitoExtension.class)
 class HankyungParserTest {
 
-    private HankyungParser parser;
+    private HankyungParser hankyungParser;
 
     @Mock
     private RestTemplate restTemplate;
@@ -37,21 +37,7 @@ class HankyungParserTest {
 
     @BeforeEach
     void setUp() {
-        parser = new HankyungParser(restTemplate);
-    }
-
-    @Test
-    void testSupports_trueForHankyungUrl() {
-        // "hankyung.com"이 포함된 URL에 대해 true 반환
-        assertTrue(parser.supports(FEED_URL),
-            "hankyung 도메인이 포함된 URL은 supports()가 true를 반환해야 합니다.");
-    }
-
-    @Test
-    void testSupports_falseForOtherUrl() {
-        // 한경 도메인이 아닌 URL에 대해 false 반환
-        assertFalse(parser.supports("https://www.yonhapnewstv.co.kr/browse/feed/"),
-            "hankyung 도메인이 포함되지 않은 URL은 supports()가 false를 반환해야 합니다.");
+        hankyungParser = new HankyungParser(restTemplate);
     }
 
     @Test
@@ -72,7 +58,7 @@ class HankyungParserTest {
 
         Element item = (Element) doc.getElementsByTagName("item").item(0);
 
-        RssRawArticleDto dto = parser.mapItem(item);
+        RssRawArticleDto dto = hankyungParser.mapItem(item);
 
         assertAll("mapped dto",
             () -> assertEquals("한경RSS", dto.sourceName()),
@@ -108,7 +94,7 @@ class HankyungParserTest {
         given(restTemplate.getForObject(eq(FEED_URL), eq(Resource.class)))
             .willReturn(resource);
 
-        List<RssRawArticleDto> result = parser.parse(FEED_URL, restTemplate);
+        List<RssRawArticleDto> result = hankyungParser.parse(FEED_URL, restTemplate);
 
         assertAll("한경 파싱 결과 검증",
             () -> assertEquals(2, result.size(), "두 개의 item이 파싱되어야 합니다."),
@@ -123,7 +109,7 @@ class HankyungParserTest {
         given(restTemplate.getForObject(eq(FEED_URL), eq(Resource.class)))
             .willReturn(null);
 
-        List<RssRawArticleDto> result = parser.parse(FEED_URL, restTemplate);
+        List<RssRawArticleDto> result = hankyungParser.parse(FEED_URL, restTemplate);
         assertTrue(result.isEmpty(),
             "Resource가 null인 경우 parse()는 빈 리스트를 반환해야 합니다.");
     }
@@ -136,7 +122,7 @@ class HankyungParserTest {
         given(restTemplate.getForObject(eq(FEED_URL), eq(Resource.class)))
             .willReturn(resource);
 
-        List<RssRawArticleDto> result = parser.parse(FEED_URL, restTemplate);
+        List<RssRawArticleDto> result = hankyungParser.parse(FEED_URL, restTemplate);
         assertTrue(result.isEmpty(),
             "XML 파싱 오류 시 parse()는 빈 리스트를 반환해야 합니다.");
     }

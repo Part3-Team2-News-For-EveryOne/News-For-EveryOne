@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import java.io.InputStream;
 import java.util.Collections;
@@ -24,29 +26,30 @@ public interface RssParser {
 
   default List<RssRawArticleDto> parse(String feedUrl, RestTemplate restTemplate){
     try{
-      Document document = fetchDocument(feedUrl, restTemplate);
-      NodeList items = document.getElementsByTagName("item");
-      return parseDocument(document);
+      return fetchDocument(feedUrl, restTemplate)
+          .map(this::parseDocument)
+          .orElse(Collections.emptyList());
     } catch(Exception ex){
       ex.printStackTrace();
       return Collections.emptyList();
     }
   }
 
-  // catch문을 대신 함
-  @SneakyThrows
   // xml파일에서 document생성
-  default Document fetchDocument(String feedUrl, RestTemplate restTemplate) {
+  default Optional<Document> fetchDocument(String feedUrl, RestTemplate restTemplate) {
     Resource resource = restTemplate.getForObject(feedUrl, Resource.class);
     if(resource == null){
-      throw new IllegalArgumentException("Feed를 가져올 수 없습니다: "+ feedUrl);
+      return Optional.empty();
     }
 
     try(InputStream is = resource.getInputStream()){
-      return DocumentBuilderFactory
+      return Optional.of(DocumentBuilderFactory
           .newInstance()
           .newDocumentBuilder()
-          .parse(is);
+          .parse(is)
+      );
+    } catch(Exception e){
+      return Optional.empty();
     }
   }
 
