@@ -13,31 +13,21 @@ import com.example.newsforeveryone.comment.repository.CommentLikeRepository;
 import com.example.newsforeveryone.comment.repository.CommentRepository;
 import com.example.newsforeveryone.common.exception.BaseException;
 import com.example.newsforeveryone.common.exception.ErrorCode;
+import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
+import com.example.newsforeveryone.newsarticle.repository.NewsArticleRepository;
 import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
+import java.time.Instant;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-//@SpringBootTest
-//@ActiveProfiles("test")
-@Transactional
-//@EnableAutoConfiguration(exclude = BatchAutoConfiguration.class)
-//@TestPropertySource(properties = {
-//    "spring.flyway.enabled=false",
-//    "spring.jpa.hibernate.ddl-auto=create-drop"
-//})
-//@Testcontainers
+
 class CommentServiceTest extends IntegrationTestSupport {
 
   @Autowired
@@ -50,29 +40,39 @@ class CommentServiceTest extends IntegrationTestSupport {
   private CommentLikeRepository commentLikeRepository;
 
   @Autowired
+  private NewsArticleRepository newsArticleRepository;
+
+  @Autowired
   private UserRepository userRepository;
 
   private User testUser1;
   private User testUser2;
-  private Long articleId = 1L;
+  private Long articleId;
 
+  @Transactional
   @BeforeEach
   void setUp() {
     // 테스트용 사용자 생성
     testUser1 = User.builder()
         .email("test1@example.com")
         .nickname("testUser1")
+        .password("")
         .build();
 
     testUser2 = User.builder()
         .email("test2@example.com")
         .nickname("testUser2")
+        .password("")
         .build();
 
     testUser1 = userRepository.save(testUser1);
     testUser2 = userRepository.save(testUser2);
+
+    NewsArticle savedNewsArticle = saveNewsArticle("");
+    articleId = savedNewsArticle.getId();
   }
 
+  @Transactional
   @DisplayName("댓글 좋아요 기능 테스트")
   @Test
   void testCommentLikeFeature() {
@@ -82,12 +82,14 @@ class CommentServiceTest extends IntegrationTestSupport {
     CommentResponse comment = commentService.createComment(createRequest, testUser1.getId());
 
     // when: 댓글에 좋아요 추가
-    CommentLikeResponse likeResponse = commentService.likeComment(Long.valueOf(comment.id()), testUser2.getId());
+    CommentLikeResponse likeResponse = commentService.likeComment(Long.valueOf(comment.id()),
+        testUser2.getId());
 
     // then: 좋아요가 정상적으로 추가됨
     assertThat(likeResponse.commentLikeCount()).isEqualTo(1L);
     assertThat(
-        commentLikeRepository.existsByCommentIdAndLikedUserId(Long.valueOf(comment.id()), testUser2.getId()))
+        commentLikeRepository.existsByCommentIdAndLikedUserId(Long.valueOf(comment.id()),
+            testUser2.getId()))
         .isTrue();
 
     // when: 좋아요 취소
@@ -95,10 +97,12 @@ class CommentServiceTest extends IntegrationTestSupport {
 
     // then: 좋아요가 정상적으로 취소됨
     assertThat(
-        commentLikeRepository.existsByCommentIdAndLikedUserId(Long.valueOf(comment.id()), testUser2.getId()))
+        commentLikeRepository.existsByCommentIdAndLikedUserId(Long.valueOf(comment.id()),
+            testUser2.getId()))
         .isFalse();
   }
 
+  @Transactional
   @DisplayName("댓글 좋아요 중복 방지 테스트")
   @Test
   void testPreventDuplicateCommentLike() {
@@ -109,11 +113,13 @@ class CommentServiceTest extends IntegrationTestSupport {
     commentService.likeComment(Long.valueOf(comment.id()), testUser2.getId());
 
     // when & then: 동일 사용자가 다시 좋아요 시도 시 예외 발생
-    assertThatThrownBy(() -> commentService.likeComment(Long.valueOf(comment.id()), testUser2.getId()))
+    assertThatThrownBy(
+        () -> commentService.likeComment(Long.valueOf(comment.id()), testUser2.getId()))
         .isInstanceOf(BaseException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_LIKE_DUPLICATED);
   }
 
+  @Transactional
   @DisplayName("존재하지 않는 좋아요 취소 시 예외 발생 테스트")
   @Test
   void testUnlikeNonExistentCommentLike() {
@@ -123,11 +129,13 @@ class CommentServiceTest extends IntegrationTestSupport {
     CommentResponse comment = commentService.createComment(createRequest, testUser1.getId());
 
     // when & then: 좋아요하지 않은 댓글의 좋아요 취소 시 예외 발생
-    assertThatThrownBy(() -> commentService.unlikeComment(Long.valueOf(comment.id()), testUser2.getId()))
+    assertThatThrownBy(
+        () -> commentService.unlikeComment(Long.valueOf(comment.id()), testUser2.getId()))
         .isInstanceOf(BaseException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_LIKE_NOT_FOUND);
   }
 
+  @Transactional
   @DisplayName("본인 댓글만 수정 가능 테스트")
   @Test
   void testUpdateCommentPermission() {
@@ -151,6 +159,7 @@ class CommentServiceTest extends IntegrationTestSupport {
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_UPDATE_FORBIDDEN);
   }
 
+  @Transactional
   @DisplayName("본인 댓글만 삭제 가능 테스트")
   @Test
   void testDeleteCommentPermission() {
@@ -160,15 +169,18 @@ class CommentServiceTest extends IntegrationTestSupport {
     CommentResponse comment = commentService.createComment(createRequest, testUser1.getId());
 
     // when & then: user2가 user1의 댓글 삭제 시도 시 예외 발생
-    assertThatThrownBy(() -> commentService.softDeleteComment(Long.valueOf(comment.id()), testUser2.getId()))
+    assertThatThrownBy(
+        () -> commentService.softDeleteComment(Long.valueOf(comment.id()), testUser2.getId()))
         .isInstanceOf(BaseException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_DELETE_FORBIDDEN);
 
     // when: user1이 본인 댓글 삭제 (성공)
-    assertThatCode(() -> commentService.softDeleteComment(Long.valueOf(comment.id()), testUser1.getId()))
+    assertThatCode(
+        () -> commentService.softDeleteComment(Long.valueOf(comment.id()), testUser1.getId()))
         .doesNotThrowAnyException();
   }
 
+  @Transactional
   @DisplayName("소프트 삭제된 댓글 접근 차단 테스트")
   @Test
   void testSoftDeletedCommentAccess() {
@@ -186,16 +198,19 @@ class CommentServiceTest extends IntegrationTestSupport {
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_ALREADY_DELETED);
 
     // when & then: 삭제된 댓글 재삭제 시도 시 예외 발생
-    assertThatThrownBy(() -> commentService.softDeleteComment(Long.valueOf(comment.id()), testUser1.getId()))
+    assertThatThrownBy(
+        () -> commentService.softDeleteComment(Long.valueOf(comment.id()), testUser1.getId()))
         .isInstanceOf(BaseException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_ALREADY_DELETED);
 
     // when & then: 삭제된 댓글 좋아요 시도 시 예외 발생 (댓글을 찾을 수 없음)
-    assertThatThrownBy(() -> commentService.likeComment(Long.valueOf(comment.id()), testUser2.getId()))
+    assertThatThrownBy(
+        () -> commentService.likeComment(Long.valueOf(comment.id()), testUser2.getId()))
         .isInstanceOf(BaseException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
   }
 
+  @Transactional
   @DisplayName("커서 기반 페이지네이션 동작 테스트")
   @Test
   void testCursorBasedPagination() {
@@ -225,7 +240,8 @@ class CommentServiceTest extends IntegrationTestSupport {
 
     // when: 두 번째 페이지 조회 (커서 사용)
     CommentListResponse secondPage = commentService.getComments(
-        articleId, "createdAt", "DESC", firstPage.nextCursor(), Long.valueOf(firstPage.nextAfter()), 2, testUser1.getId());
+        articleId, "createdAt", "DESC", firstPage.nextCursor(), Long.valueOf(firstPage.nextAfter()),
+        2, testUser1.getId());
 
     // then: 두 번째 페이지 검증
     assertThat(secondPage.content()).hasSize(2);
@@ -242,7 +258,8 @@ class CommentServiceTest extends IntegrationTestSupport {
 
     // when: 마지막 페이지 조회
     CommentListResponse lastPage = commentService.getComments(
-        articleId, "createdAt", "DESC", secondPage.nextCursor(), Long.valueOf(secondPage.nextAfter()), 2, testUser1.getId());
+        articleId, "createdAt", "DESC", secondPage.nextCursor(),
+        Long.valueOf(secondPage.nextAfter()), 2, testUser1.getId());
 
     // then: 마지막 페이지 검증
     assertThat(lastPage.content()).hasSize(1); // 남은 댓글 1개
@@ -251,6 +268,7 @@ class CommentServiceTest extends IntegrationTestSupport {
     assertThat(lastPage.nextAfter()).isNull(); // nextAfter 필드 검증 추가
   }
 
+  @Transactional
   @DisplayName("좋아요 수 기준 정렬 페이지네이션 테스트")
   @Test
   void testLikeCountBasedPagination() {
@@ -290,6 +308,7 @@ class CommentServiceTest extends IntegrationTestSupport {
     assertThat(comments.get(2).likeCount()).isEqualTo(0L);
   }
 
+  @Transactional
   @DisplayName("사용자별 좋아요 상태 확인 테스트")
   @Test
   void testUserLikedStatusInCommentList() {
@@ -318,6 +337,7 @@ class CommentServiceTest extends IntegrationTestSupport {
     assertThat(commentForUser1.likedByMe()).isFalse();
   }
 
+  @Transactional
   @DisplayName("존재하지 않는 댓글 접근 시 예외 발생 테스트")
   @Test
   void testAccessNonExistentComment() {
@@ -336,9 +356,24 @@ class CommentServiceTest extends IntegrationTestSupport {
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
 
     // when & then: 존재하지 않는 댓글 삭제 시도
-    assertThatThrownBy(() -> commentService.softDeleteComment(nonExistentCommentId, testUser1.getId()))
+    assertThatThrownBy(
+        () -> commentService.softDeleteComment(nonExistentCommentId, testUser1.getId()))
         .isInstanceOf(BaseException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
+  }
+
+  @NotNull
+  private NewsArticle saveNewsArticle(String link) {
+    NewsArticle newsArticle = NewsArticle.builder()
+        .interestIds(null)
+        .title("")
+        .summary("")
+        .link(link)
+        .sourceName("")
+        .publishedAt(Instant.now())
+        .build();
+
+    return newsArticleRepository.save(newsArticle);
   }
 
 }

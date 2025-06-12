@@ -74,7 +74,7 @@ class HankyungParserTest {
         RssRawArticleDto dto = parser.mapItem(item);
 
         assertAll("mapped dto",
-            () -> assertEquals("hankyung", dto.sourceName()),
+            () -> assertEquals("한경RSS", dto.sourceName()),
             () -> assertEquals("http://test.hankyung.link", dto.link()),
             () -> assertEquals("한경 테스트 제목", dto.title()),
             // summary는 title과 동일해야 함

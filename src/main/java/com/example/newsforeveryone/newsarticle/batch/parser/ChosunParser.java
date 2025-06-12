@@ -2,19 +2,10 @@ package com.example.newsforeveryone.newsarticle.batch.parser;
 
 import com.example.newsforeveryone.newsarticle.batch.dto.RssRawArticleDto;
 import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import javax.xml.parsers.DocumentBuilderFactory;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
-import java.io.InputStream;
-import java.util.List;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 @Component
 @RequiredArgsConstructor
