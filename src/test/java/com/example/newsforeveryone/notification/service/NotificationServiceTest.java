@@ -76,7 +76,8 @@ class NotificationServiceTest extends IntegrationTestSupport {
       softly.assertThat(notificationByInterest).hasSize(2);
       softly.assertThat(notificationByInterest)
           .extracting(NotificationResult::resourceType,
-              NotificationResult::resourceId, NotificationResult::userId)
+              NotificationResult::resourceId,
+              NotificationResult::userId)
           .containsExactlyInAnyOrder(
               Tuple.tuple(ResourceType.INTEREST.name(), firstInterest.getId(), firstUser.getId()),
               Tuple.tuple(ResourceType.INTEREST.name(), secondInterest.getId(), firstUser.getId())

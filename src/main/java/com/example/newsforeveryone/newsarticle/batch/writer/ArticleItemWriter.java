@@ -32,11 +32,12 @@ public class ArticleItemWriter implements ItemWriter<NewsArticle> {
 
     List<ArticleInterest> articleInterestsToSave = new ArrayList<>();
     for (NewsArticle savedArticle : savedArticles) {
-      if (savedArticle.getInterestIds() != null) {
-        for (Long interestId : savedArticle.getInterestIds()) {
-          articleInterestsToSave.add(
-              new ArticleInterest(new ArticleInterestId(savedArticle.getId(), interestId)));
-        }
+      if (savedArticle.getInterestIds() == null) {
+        continue;
+      }
+      for (Long interestId : savedArticle.getInterestIds()) {
+        articleInterestsToSave.add(
+            new ArticleInterest(new ArticleInterestId(savedArticle.getId(), interestId)));
       }
     }
     List<ArticleInterest> articleInterests = articleInterestRepository.saveAll(

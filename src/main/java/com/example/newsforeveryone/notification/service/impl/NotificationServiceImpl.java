@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +47,8 @@ public class NotificationServiceImpl implements NotificationService {
       return List.of();
     }
 
-    Map<Long, List<Long>> interestToArticle = mappingInterestToArticle(articleInterestIds);
+    Map<Long, List<Long>> interestToArticle = mappingInterestToArticle(
+        new HashSet<>(articleInterestIds));
     Set<Subscription> subscriptions = subscriptionRepository.findAllWithInterestByInterestIdIn(
         interestToArticle.keySet());
     List<Notification> notifications = notificationFactoryService.createNotifications(
@@ -59,7 +60,7 @@ public class NotificationServiceImpl implements NotificationService {
   }
 
   private Map<Long, List<Long>> mappingInterestToArticle(
-      List<ArticleInterestId> articleInterestIds) {
+      Set<ArticleInterestId> articleInterestIds) {
 
     Map<Long, List<Long>> interestIdToArticles = new HashMap<>();
     for (ArticleInterestId articleInterestId : articleInterestIds) {
