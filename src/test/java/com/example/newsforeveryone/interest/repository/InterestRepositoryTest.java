@@ -1,13 +1,12 @@
 package com.example.newsforeveryone.interest.repository;
 
-import com.example.newsforeveryone.IntegrationTestSupport;
+import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.entity.Interest;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;

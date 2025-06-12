@@ -29,9 +29,8 @@ spring:
 
 logging:
   level:
-    org :
-      hibernate.sql: DEBUG
-      springframework.data: DEBUG
+    org.hibernate.sql: DEBUG
+    org.springframework.data: DEBUG
     com.example.newsforeveryone : INFO
 
 newsforeveryone:

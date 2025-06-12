@@ -1,6 +1,6 @@
 package com.example.newsforeveryone.interest.service;
 
-import com.example.newsforeveryone.IntegrationTestSupport;
+import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.SubscriptionResult;
 import com.example.newsforeveryone.interest.dto.request.InterestRegisterRequest;

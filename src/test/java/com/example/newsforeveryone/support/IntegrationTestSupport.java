@@ -1,4 +1,4 @@
-package com.example.newsforeveryone;
+package com.example.newsforeveryone.support;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;

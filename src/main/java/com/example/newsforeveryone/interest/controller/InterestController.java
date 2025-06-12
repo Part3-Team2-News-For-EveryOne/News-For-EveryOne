@@ -14,7 +14,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,72 +30,82 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/interests")
 public class InterestController {
 
-    private static final double SIMILARITY_THRESHOLD = 0.8;
-    private final InterestService interestService;
+  private static final double SIMILARITY_THRESHOLD = 0.8;
+  private final InterestService interestService;
 
-    @PostMapping
-    public ResponseEntity<InterestResult> registerInterest(@Valid @RequestBody InterestRegisterRequest interestRegisterRequest) {
-        InterestResult interestResult = interestService.registerInterest(interestRegisterRequest, SIMILARITY_THRESHOLD);
+  @PostMapping
+  public ResponseEntity<InterestResult> registerInterest(
+      @Valid @RequestBody InterestRegisterRequest interestRegisterRequest) {
+    InterestResult interestResult = interestService.registerInterest(interestRegisterRequest,
+        SIMILARITY_THRESHOLD);
 
-        return ResponseEntity.ok(interestResult);
-    }
+    return ResponseEntity.ok(interestResult);
+  }
 
-    @GetMapping
-    public ResponseEntity<CursorPageInterestResponse<InterestResult>> getAllInterests(
-            @RequestParam(defaultValue = "") String keyword,
-            @RequestParam @NotBlank String orderBy,
-            @RequestParam @NotBlank String direction,
-            @RequestParam(required = false) String cursor,
-            @RequestParam(required = false) String after,
-            @RequestParam(defaultValue = "50") Integer limit
-    ) {
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getPrincipal();
-        InterestSearchRequest interestSearchRequest = new InterestSearchRequest(keyword, orderBy, direction, cursor, after, limit);
-        CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(interestSearchRequest, userDetails.getUserId());
+  @GetMapping
+  public ResponseEntity<CursorPageInterestResponse<InterestResult>> getAllInterests(
+      @RequestParam(defaultValue = "") String keyword,
+      @RequestParam @NotBlank String orderBy,
+      @RequestParam @NotBlank String direction,
+      @RequestParam(required = false) String cursor,
+      @RequestParam(required = false) String after,
+      @RequestParam(defaultValue = "50") Integer limit
+  ) {
+    CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+        .getAuthentication()
+        .getPrincipal();
+    InterestSearchRequest interestSearchRequest = new InterestSearchRequest(keyword, orderBy,
+        direction, cursor, after, limit);
+    CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(
+        interestSearchRequest, userDetails.getUserId());
 
-        return ResponseEntity.ok(interests);
-    }
+    return ResponseEntity.ok(interests);
+  }
 
-    @PostMapping("/{interestId}/subscriptions")
-    public ResponseEntity<SubscriptionResult> subscribeInterest(@PathVariable(name = "interestId") Long interestId) {
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getPrincipal();
-        SubscriptionResult subscriptionResult = interestService.subscribeInterest(interestId, userDetails.getUserId());
+  @PostMapping("/{interestId}/subscriptions")
+  public ResponseEntity<SubscriptionResult> subscribeInterest(
+      @PathVariable(name = "interestId") Long interestId) {
+    CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+        .getAuthentication()
+        .getPrincipal();
+    SubscriptionResult subscriptionResult = interestService.subscribeInterest(interestId,
+        userDetails.getUserId());
 
-        return ResponseEntity.ok(subscriptionResult);
-    }
+    return ResponseEntity.ok(subscriptionResult);
+  }
 
-    @DeleteMapping("/{interestId}/subscriptions")
-    public ResponseEntity<Void> unsubscribeInterest(@PathVariable(name = "interestId") Long interestId) {
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getPrincipal();
-        interestService.unsubscribeInterest(interestId, userDetails.getUserId());
+  @DeleteMapping("/{interestId}/subscriptions")
+  public ResponseEntity<Void> unsubscribeInterest(
+      @PathVariable(name = "interestId") Long interestId) {
+    CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+        .getAuthentication()
+        .getPrincipal();
+    interestService.unsubscribeInterest(interestId, userDetails.getUserId());
 
-        return ResponseEntity.noContent()
-                .build();
-    }
+    return ResponseEntity.noContent()
+        .build();
+  }
 
-    @DeleteMapping("/{interestId}")
-    public ResponseEntity<Void> deleteInterest(@PathVariable(name = "interestId") Long interestId) {
-        interestService.deleteInterest(interestId);
+  @DeleteMapping("/{interestId}")
+  public ResponseEntity<Void> deleteInterest(@PathVariable(name = "interestId") Long interestId) {
+    interestService.deleteInterest(interestId);
 
-        return ResponseEntity
-                .noContent()
-                .build();
-    }
+    return ResponseEntity
+        .noContent()
+        .build();
+  }
 
-    @PatchMapping("/{interestId}")
-    public ResponseEntity<InterestResult> updateInterest(@PathVariable(name = "interestId") Long interestId, @Valid @RequestBody InterestUpdateRequest interestUpdateRequest) {
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getPrincipal();
-        InterestResult interestResult = interestService.updateKeywordInInterest(interestId, userDetails.getUserId(), interestUpdateRequest, SIMILARITY_THRESHOLD);
+  @PatchMapping("/{interestId}")
+  public ResponseEntity<InterestResult> updateInterest(
+      @PathVariable(name = "interestId") Long interestId,
+      @Valid @RequestBody InterestUpdateRequest interestUpdateRequest) {
+    CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+        .getAuthentication()
+        .getPrincipal();
+    InterestResult interestResult = interestService.updateKeywordInInterest(interestId,
+        userDetails.getUserId(), interestUpdateRequest, SIMILARITY_THRESHOLD);
 
-        return ResponseEntity.ok(interestResult);
-    }
+    return ResponseEntity.ok(interestResult);
+  }
 
 }

@@ -1,13 +1,16 @@
 package com.example.newsforeveryone.comment.entity;
 
-import com.example.newsforeveryone.comment.entity.Id.CommentLikeId;
-import jakarta.persistence.*;
+import com.example.newsforeveryone.comment.entity.id.CommentLikeId;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.Table;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.Instant;
 
 @Entity
 @Table(name = "comment_like")
@@ -30,4 +33,3 @@ public class CommentLike {
   @Builder.Default
   private Instant likedAt = Instant.now();
 }
-

@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, SubscriptionId> {
 
-    void deleteByInterest_Id(Long interestId);
+  void deleteByInterest_Id(Long interestId);
 
 }
