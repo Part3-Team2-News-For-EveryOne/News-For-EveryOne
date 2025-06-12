@@ -80,4 +80,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
       "WHERE c.articleId = :articleId AND c.deletedAt IS NULL " +
       "ORDER BY c.createdAt DESC")
   List<Comment> findCommentsWithLikes(@Param("articleId") Long articleId);
+
+  long countByArticleIdAndDeletedAtIsNull(Long articleId);
 }
