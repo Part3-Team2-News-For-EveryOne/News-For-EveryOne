@@ -1,7 +1,8 @@
 package com.example.newsforeveryone.notification.service.impl;
 
-import com.example.newsforeveryone.comment.entity.Comment;
 import com.example.newsforeveryone.interest.entity.Interest;
+import com.example.newsforeveryone.interest.exception.InterestNotFoundException;
+import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.notification.dto.NotificationResult;
 import com.example.newsforeveryone.notification.dto.request.NotificationSearchRequest;
 import com.example.newsforeveryone.notification.dto.response.CursorPageNotificationResponse;
@@ -30,17 +31,18 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
+  private final InterestRepository interestRepository;
   private final NotificationRepository notificationRepository;
   private final UserRepository userRepository;
 
   @Override
-  public NotificationResult createNotificationByInterest(User user, Interest interest, long count) {
-    if (user == null) {
-      throw new IllegalArgumentException("잘못된 사용자가 입력되었습니다.");
-    }
-    validateIsEnrolledUser(user.getId());
+  public NotificationResult createNotificationByInterest(long userId, long interestId,
+      long count) {
+    validateIsEnrolledUser(userId);
+    Interest interest = interestRepository.findById(interestId)
+        .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
 
-    Notification notification = Notification.ofInterest(user.getId(), interest.getId(),
+    Notification notification = Notification.ofInterest(userId, interest.getId(),
         interest.getName(), count);
     Notification savedNotification = notificationRepository.save(notification);
 
@@ -48,14 +50,13 @@ public class NotificationServiceImpl implements NotificationService {
   }
 
   @Override
-  public NotificationResult createNotificationByComment(User author, User liker, Comment comment) {
-    if (author == null || liker == null) {
-      throw new IllegalArgumentException("잘못된 사용자가 입력되었습니다.");
-    }
-    validateIsEnrolledUser(author.getId());
-    validateIsEnrolledUser(liker.getId());
+  public NotificationResult createNotificationByComment(long authorId, long likerId,
+      long commentId) {
+    validateIsEnrolledUser(authorId);
+    User liker = userRepository.findById(likerId)
+        .orElseThrow(() -> new UserNotFoundException(Map.of("liker-id", likerId)));
 
-    Notification notification = Notification.ofComment(author.getId(), comment.getId(),
+    Notification notification = Notification.ofComment(authorId, commentId,
         liker.getNickname());
     Notification savedNotification = notificationRepository.save(notification);
 
@@ -124,6 +125,7 @@ public class NotificationServiceImpl implements NotificationService {
     if (userRepository.existsById(userId)) {
       return;
     }
+
     throw new UserNotFoundException(Map.of("user-id", userId));
   }
 
