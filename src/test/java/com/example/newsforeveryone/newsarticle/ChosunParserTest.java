@@ -79,7 +79,7 @@ class ChosunParserTest {
 
     // 첫 번째 기사 검증
     RssRawArticleDto article1 = articles.get(0);
-    assertEquals("chosun", article1.sourceName());
+    assertEquals("조선RSS", article1.sourceName());
     assertEquals("https://www.chosun.com/international/international_general/2025/06/04/N4I6UFSUVZCYNPCV6KMLHWII6Q/", article1.link());
     assertEquals("50m 상공서 안전장치 풀더니 “내려줘”... 패러세일링 하던 10대 추락사", article1.title());
     assertEquals("몬테네그로 부드바 해변에서 패러세일링을 하던 세르비아 출신 10대 여성이 공중에서 안전장비를 풀고 50m 높이에서 추락해 사망하는 사고가 발생했다. 짧은 요약입니다.", article1.summary());
@@ -89,7 +89,7 @@ class ChosunParserTest {
 
     // 두 번째 기사 검증
     RssRawArticleDto article2 = articles.get(1);
-    assertEquals("chosun", article2.sourceName());
+    assertEquals("조선RSS", article2.sourceName());
     assertEquals("https://www.chosun.com/economy/money/2025/06/04/CUVA6V62GB6ASCD53EQ44LE56I/", article2.link());
     assertEquals("[특징주] 알테오젠, PGR 정식 개시 소식에 9%대 강세", article2.title());
     assertEquals("4일 장 초반 알테오젠 주가가 강세다. 알테오젠이 경쟁사인 할로자임의 특허에 대해 제기한 특허무효심판(PGR)을 미국 특허청이 정식 개시한 것으로 알려지면서다. 이 또한 짧은 요약입니다.", article2.summary());
