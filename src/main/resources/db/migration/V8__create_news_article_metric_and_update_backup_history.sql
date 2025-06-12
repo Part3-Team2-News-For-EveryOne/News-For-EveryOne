@@ -107,12 +107,3 @@ ALTER COLUMN backup_date TYPE timestamp with time zone
 
 -- source type column 추가
 ALTER TABLE source ADD COLUMN type VARCHAR(50) NOT NULL DEFAULT 'RSS';
-
--- source table에 feed-url 추가
-INSERT INTO source (name, feed_url, created_at, updated_at)
-VALUES (
-           '연합RSS',
-           'https://www.yonhapnewstv.co.kr/browse/feed/',
-           now(),
-           now()
-       );
