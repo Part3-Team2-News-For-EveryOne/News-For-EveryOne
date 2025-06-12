@@ -17,8 +17,14 @@ spring:
       mode: never
 
 newsforeveryone:
-  s3:
-    access-key: dummy-test-key
-    secret-key: dummy-test-secret
-    region: dummy-region
-    bucket: dummy-bucket
+  storage:
+    s3:
+      access-key: dummy-test-key
+      secret-key: dummy-test-secret
+      region: dummy-region
+      bucket: dummy-bucket
+
+naver:
+  client:
+    id: ${NAVER_CLIENT_ID:1111}
+    secret: ${NAVER_CLIENT_SECRET:1111}
