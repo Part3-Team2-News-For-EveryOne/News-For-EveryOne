@@ -15,9 +15,12 @@ import com.example.newsforeveryone.common.exception.ErrorCode;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -45,20 +48,31 @@ public class BasicCommentService implements CommentService {
     List<Comment> comments = fetchComments(params);
     boolean hasNext = comments.size() > limit;
     if (hasNext) comments = comments.subList(0, limit);
+    if (comments.isEmpty()) {
+      return commentMapper.toListResponse(Collections.emptyList(), null, null, limit, 0L, false);
+    }
 
+    // 1. 댓글 작성자 ID 목록 추출
+    Set<Long> userIds = comments.stream().map(Comment::getUserId).collect(Collectors.toSet());
+
+    // 2. ID 목록으로 사용자 정보 한번에 조회
+    Map<Long, String> userNicknameMap = userRepository.findAllById(userIds).stream()
+        .collect(Collectors.toMap(User::getId, User::getNickname));
+
+    // 3. 현재 사용자가 좋아요 누른 댓글 ID 목록 조회
     Set<Long> likedIds = fetchLikedIds(comments, params.requestUserIdLong());
+
+    // 4. Map을 활용하여 DTO 변환 (DB 추가 조회 없음)
     List<CommentResponse> responses = comments.stream()
-        .map(c -> toResponseWithLike(c, likedIds))
+        .map(comment -> {
+          String nickname = userNicknameMap.getOrDefault(comment.getUserId(), "탈퇴한 사용자");
+          boolean likedByMe = likedIds.contains(comment.getId());
+          return commentMapper.toResponse(comment, nickname, likedByMe);
+        })
         .toList();
 
-    String nextCursor = hasNext && !comments.isEmpty()
-        ? comments.get(comments.size() - 1).getCreatedAt().toString()
-        : null;
-
-    String nextAfter = hasNext && !comments.isEmpty()
-        ? comments.get(comments.size() - 1).getId().toString()
-        : null;
-
+    String nextCursor = hasNext ? comments.get(comments.size() - 1).getCreatedAt().toString() : null;
+    String nextAfter = hasNext ? comments.get(comments.size() - 1).getId().toString() : null;
     Long totalElements = getTotalCommentCount(articleId);
 
     return commentMapper.toListResponse(responses, nextCursor, nextAfter, limit, totalElements, hasNext);
@@ -88,11 +102,13 @@ public class BasicCommentService implements CommentService {
     if (commentLikeRepository.existsByCommentIdAndLikedUserId(commentId, requestUserId))
       throw new BaseException(ErrorCode.COMMENT_LIKE_DUPLICATED);
 
-    CommentLike like = commentLikeRepository.save(commentMapper.toCommentLike(commentId, requestUserId));
+    CommentLike like = commentMapper.toCommentLike(commentId, requestUserId);
     comment.addLike(like);
+
     String nickname = getUserNickname(comment.getUserId());
     return commentMapper.toCommentLikeResponse(comment, nickname);
   }
+
 
   @Override
   @Transactional
@@ -100,8 +116,9 @@ public class BasicCommentService implements CommentService {
     Comment comment = getCommentOrThrow(commentId);
     CommentLike like = commentLikeRepository.findByCommentIdAndLikedUserId(commentId, requestUserId)
         .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_LIKE_NOT_FOUND));
-    commentLikeRepository.delete(like);
+
     comment.removeLike(like);
+    commentLikeRepository.delete(like);
   }
 
   @Override
@@ -165,9 +182,13 @@ public class BasicCommentService implements CommentService {
   }
 
   private List<Comment> fetchComments(CommentQueryParams p) {
-    if (p.cursorTime() != null) {
+    if (p.cursorTime() != null || p.idCursor() != null) {
+      Long likeCountCursor = null;
+      if ("likeCount".equals(p.orderBy()) && p.idCursor() != null) {
+        likeCountCursor = getCommentOrThrow(p.idCursor()).getLikeCount();
+      }
       return commentRepository.findCommentsWithCursor(
-          p.articleIdLong(), p.orderBy(), p.direction(), p.cursorTime(), null, p.idCursor(), p.pageable());
+          p.articleIdLong(), p.orderBy(), p.direction(), p.cursorTime(), likeCountCursor, p.idCursor(), p.pageable());
     }
     return commentRepository.findCommentsWithoutCursor(
         p.articleIdLong(), p.orderBy(), p.direction(), p.pageable());
@@ -180,17 +201,12 @@ public class BasicCommentService implements CommentService {
         commentLikeRepository.findLikedCommentIdsByUserIdAndCommentIds(userId, ids));
   }
 
-  private CommentResponse toResponseWithLike(Comment c, Set<Long> likedIds) {
-    String nickname = getUserNickname(c.getUserId());
-    return commentMapper.toResponse(c, nickname, likedIds.contains(c.getId()));
-  }
-
   private void validateUser(Long reqUser, Long actualUser) {
     if (!reqUser.equals(actualUser)) throw new BaseException(ErrorCode.UNAUTHORIZED_USER_ACCESS);
   }
 
   private Comment getCommentOrThrow(Long id) {
-    return commentRepository.findByIdAndDeletedAtIsNull(id)
+    return commentRepository.findById(id)
         .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_NOT_FOUND));
   }
 
