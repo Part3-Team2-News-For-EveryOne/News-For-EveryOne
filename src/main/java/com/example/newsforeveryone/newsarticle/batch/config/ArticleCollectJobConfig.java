@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration

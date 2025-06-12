@@ -67,7 +67,6 @@ class ChosunParserTest {
         () -> assertEquals("이혜진 기자", dto.author()),
         () -> assertNotNull(dto.publishedAt(), "발행일시가 null이 아니어야 함")
     );
-  }
 
   @Test
   @DisplayName("content:encoded에 p 태그가 없는 경우 summary는 빈 문자열이어야 한다")
