@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.example.newsforeveryone.IntegrationTestSupport;
 import com.example.newsforeveryone.comment.dto.CommentCreateRequest;
 import com.example.newsforeveryone.comment.dto.CommentLikeResponse;
 import com.example.newsforeveryone.comment.dto.CommentListResponse;
@@ -14,6 +13,7 @@ import com.example.newsforeveryone.comment.repository.CommentLikeRepository;
 import com.example.newsforeveryone.comment.repository.CommentRepository;
 import com.example.newsforeveryone.common.exception.BaseException;
 import com.example.newsforeveryone.common.exception.ErrorCode;
+import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.util.List;
@@ -29,15 +29,15 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
-@ActiveProfiles("test")
+//@SpringBootTest
+//@ActiveProfiles("test")
 @Transactional
-@EnableAutoConfiguration(exclude = BatchAutoConfiguration.class)
-@TestPropertySource(properties = {
-    "spring.flyway.enabled=false",
-    "spring.jpa.hibernate.ddl-auto=create-drop"
-})
-@Testcontainers
+//@EnableAutoConfiguration(exclude = BatchAutoConfiguration.class)
+//@TestPropertySource(properties = {
+//    "spring.flyway.enabled=false",
+//    "spring.jpa.hibernate.ddl-auto=create-drop"
+//})
+//@Testcontainers
 class CommentServiceTest extends IntegrationTestSupport {
 
   @Autowired

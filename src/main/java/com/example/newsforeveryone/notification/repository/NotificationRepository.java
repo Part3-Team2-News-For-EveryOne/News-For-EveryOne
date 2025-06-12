@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,10 +21,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
          AND n.confirmed = false 
       ORDER BY n.createdAt ASC
          """)
-  Page<Notification> findAllByUserIdWithCursorAsc(@Param("userId") Long userId,
+  Slice<Notification> findAllByUserIdWithCursorAsc(@Param("userId") Long userId,
       @Param("createdAt") Instant createdAt, Pageable pageable);
 
   List<Notification> findAllByUserIdAndConfirmed(Long userId, boolean isConfirmed);
+
+  long countByUserIdAndConfirmed(Long userId, boolean confirmed);
 
   void deleteAllByConfirmedTrue();
 

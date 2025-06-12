@@ -1,6 +1,5 @@
 package com.example.newsforeveryone.useractivity.repository;
 
-import com.example.newsforeveryone.IntegrationTestSupport;
 import com.example.newsforeveryone.comment.entity.Comment;
 import com.example.newsforeveryone.comment.entity.CommentLike;
 import com.example.newsforeveryone.comment.repository.CommentLikeRepository;
@@ -18,6 +17,7 @@ import com.example.newsforeveryone.newsarticle.entity.ArticleViewId;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
 import com.example.newsforeveryone.newsarticle.repository.ArticleViewRepository;
 import com.example.newsforeveryone.newsarticle.repository.NewsArticleRepository;
+import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import com.example.newsforeveryone.useractivity.repository.projection.ArticleViewActivityProjection;

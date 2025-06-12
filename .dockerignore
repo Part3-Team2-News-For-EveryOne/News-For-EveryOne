@@ -16,5 +16,5 @@ Thumbs.db
 docker-compose.yml
 Dockerfile
 
-# QueryDSL generated sources (if you must keep them locally)
-src/main/java/com/example/**/Q*.java
+## QueryDSL generated sources (if you must keep them locally)
+#src/main/java/com/example/**/Q*.java

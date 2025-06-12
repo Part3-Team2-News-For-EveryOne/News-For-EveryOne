@@ -28,10 +28,11 @@ public record CursorPageNotificationResponse<T>(
 ) {
 
   public static CursorPageNotificationResponse<NotificationResult> FromNotification(
-      Page<Notification> notifications) {
+      Slice<Notification> notifications, Long totalElement) {
+
     String nextCursor = getNextCursor(notifications);
-    List<NotificationResult> notificationResults = notifications.getContent().
-        stream()
+    List<NotificationResult> notificationResults = notifications.getContent()
+        .stream()
         .map(NotificationResult::FromEntity)
         .toList();
 
@@ -40,7 +41,7 @@ public record CursorPageNotificationResponse<T>(
         nextCursor,
         null,
         notifications.getSize(),
-        notifications.getTotalElements(),
+        totalElement,
         notifications.hasNext()
     );
   }

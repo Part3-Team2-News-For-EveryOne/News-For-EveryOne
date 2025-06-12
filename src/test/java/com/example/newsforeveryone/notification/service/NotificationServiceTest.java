@@ -122,7 +122,7 @@ class NotificationServiceTest extends IntegrationTestSupport {
   }
 
   @Transactional
-  @DisplayName("알림목록을 조회하면, 생성된 시간 순으로 오름차순 정렬해서 반환한다.")
+  @DisplayName("알림목록을 조회하면, 생성된 시간 순으로 오름차순 정렬해서 반환합니다.")
   @Test
   void getAllIn() {
     // given
@@ -186,7 +186,8 @@ class NotificationServiceTest extends IntegrationTestSupport {
 
     // then
     Assertions.assertThat(
-        notificationRepository.findAllByUserIdAndConfirmed(savedUser.getId(), false)).hasSize(2);
+        notificationRepository.findAllByUserIdAndConfirmed(savedUser.getId(), true))
+        .hasSize(2);
   }
 
   @Transactional

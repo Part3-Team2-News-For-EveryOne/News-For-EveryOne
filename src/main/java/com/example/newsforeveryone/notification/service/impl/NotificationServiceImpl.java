@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,10 +78,10 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public NotificationResult createNotificationByComment(long authorId, long likerId,
       long commentId) {
+
     validateIsEnrolledUser(authorId);
     User liker = userRepository.findById(likerId)
         .orElseThrow(() -> new UserNotFoundException(Map.of("liker-id", likerId)));
-
     Notification notification = Notification.ofComment(authorId, commentId,
         liker.getNickname());
     Notification savedNotification = notificationRepository.save(notification);
@@ -92,14 +93,15 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public CursorPageNotificationResponse<NotificationResult> getAllIn(
       NotificationSearchRequest notificationSearchRequest, long userId) {
-    validateIsEnrolledUser(userId);
 
+    validateIsEnrolledUser(userId);
     Instant cursor = parseCursor(notificationSearchRequest.cursor());
     PageRequest pageRequest = PageRequest.of(0, notificationSearchRequest.limit());
-    Page<Notification> notifications = notificationRepository.findAllByUserIdWithCursorAsc(userId,
+    Slice<Notification> notifications = notificationRepository.findAllByUserIdWithCursorAsc(userId,
         cursor, pageRequest);
 
-    return CursorPageNotificationResponse.FromNotification(notifications);
+    return CursorPageNotificationResponse.FromNotification(notifications,
+        notificationRepository.countByUserIdAndConfirmed(userId, false));
   }
 
   @Transactional
@@ -108,7 +110,7 @@ public class NotificationServiceImpl implements NotificationService {
     validateIsEnrolledUser(userId);
 
     List<Notification> notifications = notificationRepository.findAllByUserIdAndConfirmed(userId,
-        true);
+        false);
     for (Notification notification : notifications) {
       notification.confirmNotification();
     }
