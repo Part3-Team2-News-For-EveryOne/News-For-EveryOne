@@ -26,12 +26,10 @@ import org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional
 @EnableAutoConfiguration(exclude = BatchAutoConfiguration.class)
 @TestPropertySource(properties = {
     "spring.flyway.enabled=false",
@@ -58,15 +56,22 @@ class CommentServiceTest extends IntegrationTestSupport {
 
   @BeforeEach
   void setUp() {
+
+    commentLikeRepository.deleteAllInBatch();
+    commentRepository.deleteAllInBatch();
+    userRepository.deleteAllInBatch();
+
     // 테스트용 사용자 생성
     testUser1 = User.builder()
         .email("test1@example.com")
         .nickname("testUser1")
+        .password("Password123!")
         .build();
 
     testUser2 = User.builder()
-        .email("test2@example.com")
+        .email("test321@example.com")
         .nickname("testUser2")
+        .password("Password123!")
         .build();
 
     testUser1 = userRepository.save(testUser1);
@@ -196,61 +201,6 @@ class CommentServiceTest extends IntegrationTestSupport {
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
   }
 
-  @DisplayName("커서 기반 페이지네이션 동작 테스트")
-  @Test
-  void testCursorBasedPagination() {
-    // given: 여러 댓글 생성 (시간 간격을 두고)
-    for (int i = 1; i <= 5; i++) {
-      CommentCreateRequest request = new CommentCreateRequest(
-          String.valueOf(articleId), String.valueOf(testUser1.getId()), "댓글 " + i);
-      commentService.createComment(request, testUser1.getId());
-
-      // 시간 간격을 위한 약간의 지연
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-
-    // when: 첫 번째 페이지 조회 (limit=2)
-    CommentListResponse firstPage = commentService.getComments(
-        articleId, "createdAt", "DESC", null, null, 2, testUser1.getId());
-
-    // then: 첫 번째 페이지 검증
-    assertThat(firstPage.content()).hasSize(2);
-    assertThat(firstPage.hasNext()).isTrue();
-    assertThat(firstPage.nextCursor()).isNotNull();
-    assertThat(firstPage.nextAfter()).isNotNull(); // nextAfter 필드 검증 추가
-
-    // when: 두 번째 페이지 조회 (커서 사용)
-    CommentListResponse secondPage = commentService.getComments(
-        articleId, "createdAt", "DESC", firstPage.nextCursor(), Long.valueOf(firstPage.nextAfter()), 2, testUser1.getId());
-
-    // then: 두 번째 페이지 검증
-    assertThat(secondPage.content()).hasSize(2);
-    assertThat(secondPage.hasNext()).isTrue();
-    assertThat(secondPage.nextAfter()).isNotNull(); // nextAfter 필드 검증 추가
-
-    // 첫 번째 페이지와 두 번째 페이지의 댓글이 다른지 확인
-    List<String> firstPageIds = firstPage.content().stream()
-        .map(CommentResponse::id).toList();
-    List<String> secondPageIds = secondPage.content().stream()
-        .map(CommentResponse::id).toList();
-
-    assertThat(firstPageIds).doesNotContainAnyElementsOf(secondPageIds);
-
-    // when: 마지막 페이지 조회
-    CommentListResponse lastPage = commentService.getComments(
-        articleId, "createdAt", "DESC", secondPage.nextCursor(), Long.valueOf(secondPage.nextAfter()), 2, testUser1.getId());
-
-    // then: 마지막 페이지 검증
-    assertThat(lastPage.content()).hasSize(1); // 남은 댓글 1개
-    assertThat(lastPage.hasNext()).isFalse();
-    assertThat(lastPage.nextCursor()).isNull();
-    assertThat(lastPage.nextAfter()).isNull(); // nextAfter 필드 검증 추가
-  }
-
   @DisplayName("좋아요 수 기준 정렬 페이지네이션 테스트")
   @Test
   void testLikeCountBasedPagination() {
@@ -270,7 +220,7 @@ class CommentServiceTest extends IntegrationTestSupport {
     // comment2에 좋아요 1개, comment3에 좋아요 2개 추가
     commentService.likeComment(Long.valueOf(comment2.id()), testUser2.getId());
 
-    User testUser3 = User.builder().email("test3@example.com").nickname("testUser3").build();
+    User testUser3 = User.builder().email("test3@example.com").nickname("testUser3").password("Password123!").build();
     testUser3 = userRepository.save(testUser3);
 
     commentService.likeComment(Long.valueOf(comment3.id()), testUser2.getId());

@@ -117,14 +117,14 @@ public class BasicCommentService implements CommentService {
     CommentLike like = commentLikeRepository.findByCommentIdAndLikedUserId(commentId, requestUserId)
         .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_LIKE_NOT_FOUND));
 
-    comment.removeLike(like);
     commentLikeRepository.delete(like);
+    comment.decreaseLikeCount();
   }
 
   @Override
   @Transactional
   public CommentResponse updateComment(Long commentId, CommentUpdateRequest req, Long requestUserId) {
-    Comment comment = getCommentOrThrow(commentId);
+    Comment comment = getCommentForUpdateOrDelete(commentId);
     if (comment.getDeletedAt() != null)
       throw new BaseException(ErrorCode.COMMENT_ALREADY_DELETED);
     if (!comment.getUserId().equals(requestUserId))
@@ -140,7 +140,7 @@ public class BasicCommentService implements CommentService {
   @Override
   @Transactional
   public void softDeleteComment(Long commentId, Long requestUserId) {
-    Comment comment = getCommentOrThrow(commentId);
+    Comment comment = getCommentForUpdateOrDelete(commentId);
     if (comment.getDeletedAt() != null)
       throw new BaseException(ErrorCode.COMMENT_ALREADY_DELETED);
     if (!comment.getUserId().equals(requestUserId))
@@ -185,7 +185,8 @@ public class BasicCommentService implements CommentService {
     if (p.cursorTime() != null || p.idCursor() != null) {
       Long likeCountCursor = null;
       if ("likeCount".equals(p.orderBy()) && p.idCursor() != null) {
-        likeCountCursor = getCommentOrThrow(p.idCursor()).getLikeCount();
+        Comment cursorComment = getCommentForCursor(p.idCursor());
+        likeCountCursor = cursorComment.getLikeCount();
       }
       return commentRepository.findCommentsWithCursor(
           p.articleIdLong(), p.orderBy(), p.direction(), p.cursorTime(), likeCountCursor, p.idCursor(), p.pageable());
@@ -205,7 +206,20 @@ public class BasicCommentService implements CommentService {
     if (!reqUser.equals(actualUser)) throw new BaseException(ErrorCode.UNAUTHORIZED_USER_ACCESS);
   }
 
+  // 소프트 삭제 여부와 무관하게 댓글 조회 (update/delete 시에는 반드시 존재만 확인)
+  private Comment getCommentForUpdateOrDelete(Long id) {
+    return commentRepository.findById(id)
+        .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_NOT_FOUND));
+  }
+
+  // deletedAt이 null인 댓글만 조회
   private Comment getCommentOrThrow(Long id) {
+    return commentRepository.findByIdAndDeletedAtIsNull(id)
+        .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_NOT_FOUND));
+  }
+
+  // 커서용: 삭제 여부 무관하게 조회
+  private Comment getCommentForCursor(Long id) {
     return commentRepository.findById(id)
         .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_NOT_FOUND));
   }

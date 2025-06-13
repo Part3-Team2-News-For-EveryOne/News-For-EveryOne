@@ -36,7 +36,7 @@ public class Comment extends SoftDeletableEntity {
   @Column(name = "like_count", nullable = false)
   private Long likeCount = 0L;
 
-  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   @JoinColumn(name = "comment_id")
   @Builder.Default
   private List<CommentLike> likes = new ArrayList<>();
@@ -63,13 +63,6 @@ public class Comment extends SoftDeletableEntity {
     }
     likes.add(commentLike);
     increaseLikeCount();
-  }
-
-  public void removeLike(CommentLike commentLike) {
-    if (likes != null) {
-      likes.remove(commentLike);
-      decreaseLikeCount();
-    }
   }
 }
 
