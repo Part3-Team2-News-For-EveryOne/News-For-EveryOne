@@ -3,6 +3,7 @@ package com.example.newsforeveryone.interest.mapper;
 import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.response.CursorPageInterestResponse;
 import com.example.newsforeveryone.interest.entity.Interest;
+import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.Subscription;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
@@ -23,6 +24,16 @@ public class InterestMapper {
   private final SubscriptionRepository subscriptionRepository;
   private final InterestKeywordRepository interestKeywordRepository;
 
+  public InterestResult toResult(Interest interest, List<Keyword> keywords, Long userId) {
+    if (userId == null) {
+      return InterestResult.fromEntity(interest, keywords, null);
+    }
+    SubscriptionId subscriptionId = new SubscriptionId(interest.getId(), userId);
+    boolean exists = subscriptionRepository.existsById(subscriptionId);
+
+    return InterestResult.fromEntity(interest, keywords, exists);
+  }
+
   public CursorPageInterestResponse<InterestResult> toCursorPageResponse(
       Map<Interest, List<String>> interestListMap,
       String word,
@@ -36,6 +47,7 @@ public class InterestMapper {
     String nextAfter = getNextAfter(interestListMap);
     Long totalElement = interestKeywordRepository.countSearchInterest(word,
         interestListMap.keySet().stream().toList());
+
     return CursorPageInterestResponse.fromEntity(
         interestResults,
         nextCursor,
@@ -95,7 +107,8 @@ public class InterestMapper {
     List<String> keywords = entry.getValue();
     boolean isSubscribed = subscribedIds.contains(
         new SubscriptionId(interest.getId(), user.getId()));
-    return InterestResult.fromEntity(interest, keywords, isSubscribed);
+
+    return InterestResult.from(interest, keywords, isSubscribed);
   }
 
 }

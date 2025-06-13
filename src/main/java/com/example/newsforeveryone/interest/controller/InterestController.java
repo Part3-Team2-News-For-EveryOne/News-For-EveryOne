@@ -30,14 +30,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/interests")
 public class InterestController {
 
-  private static final double SIMILARITY_THRESHOLD = 0.8;
   private final InterestService interestService;
 
   @PostMapping
   public ResponseEntity<InterestResult> registerInterest(
       @Valid @RequestBody InterestRegisterRequest interestRegisterRequest) {
-    InterestResult interestResult = interestService.registerInterest(interestRegisterRequest,
-        SIMILARITY_THRESHOLD);
+    InterestResult interestResult = interestService.registerInterest(interestRegisterRequest);
 
     return ResponseEntity.ok(interestResult);
   }
@@ -104,7 +102,7 @@ public class InterestController {
       @AuthenticationPrincipal CustomUserDetails userDetails
   ) {
     InterestResult interestResult = interestService.updateKeywordInInterest(interestId,
-        userDetails.getUserId(), interestUpdateRequest, SIMILARITY_THRESHOLD);
+        userDetails.getUserId(), interestUpdateRequest);
 
     return ResponseEntity.ok(interestResult);
   }

@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -79,7 +78,7 @@ public class NotificationServiceImpl implements NotificationService {
   public NotificationResult createNotificationByComment(long authorId, long likerId,
       long commentId) {
 
-    validateIsEnrolledUser(authorId);
+    validateUserExists(authorId);
     User liker = userRepository.findById(likerId)
         .orElseThrow(() -> new UserNotFoundException(Map.of("liker-id", likerId)));
     Notification notification = Notification.ofComment(authorId, commentId,
@@ -94,7 +93,7 @@ public class NotificationServiceImpl implements NotificationService {
   public CursorPageNotificationResponse<NotificationResult> getAllIn(
       NotificationSearchRequest notificationSearchRequest, long userId) {
 
-    validateIsEnrolledUser(userId);
+    validateUserExists(userId);
     Instant cursor = parseCursor(notificationSearchRequest.cursor());
     PageRequest pageRequest = PageRequest.of(0, notificationSearchRequest.limit());
     Slice<Notification> notifications = notificationRepository.findAllByUserIdWithCursorAsc(userId,
@@ -107,7 +106,7 @@ public class NotificationServiceImpl implements NotificationService {
   @Transactional
   @Override
   public void confirmAllNotifications(long userId) {
-    validateIsEnrolledUser(userId);
+    validateUserExists(userId);
 
     List<Notification> notifications = notificationRepository.findAllByUserIdAndConfirmed(userId,
         false);
@@ -147,11 +146,10 @@ public class NotificationServiceImpl implements NotificationService {
     }
   }
 
-  private void validateIsEnrolledUser(long userId) {
+  private void validateUserExists(long userId) {
     if (userRepository.existsById(userId)) {
       return;
     }
-
     throw new UserNotFoundException(Map.of("user-id", userId));
   }
 

@@ -16,6 +16,7 @@ public enum ErrorCode {
   INTEREST_NOT_FOUND(404, "I1", "관심사를 찾을 수 없습니다."),
   INTEREST_AlREADY_EXIST(404, "I2", "유사한 관심사가 이미 존재합니다."),
 
+  // 알림 관련
   NOTIFICATION_NOT_FOUND(404, "N2", "알림을 찾을 수 없습니다."),
 
   // 댓글 관련

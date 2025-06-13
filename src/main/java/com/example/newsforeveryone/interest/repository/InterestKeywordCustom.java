@@ -1,4 +1,4 @@
-package com.example.newsforeveryone.interest.repository.querydsl;
+package com.example.newsforeveryone.interest.repository;
 
 import com.example.newsforeveryone.interest.entity.Interest;
 import java.util.List;

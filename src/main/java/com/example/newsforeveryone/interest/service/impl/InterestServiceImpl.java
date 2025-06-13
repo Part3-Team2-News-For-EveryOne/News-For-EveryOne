@@ -11,19 +11,19 @@ import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.Subscription;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
-import com.example.newsforeveryone.interest.exception.InterestAlreadyExistException;
 import com.example.newsforeveryone.interest.exception.InterestNotFoundException;
 import com.example.newsforeveryone.interest.mapper.InterestMapper;
+import com.example.newsforeveryone.interest.mapper.SubscriptionMapper;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
 import com.example.newsforeveryone.interest.service.InterestService;
+import com.example.newsforeveryone.interest.service.WordSimilarityService;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.exception.UserNotFoundException;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,41 +32,34 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class InterestServiceImpl implements InterestService {
 
+  private static final double SIMILARITY_THRESHOLD = 0.8;
   private final KeywordService keywordService;
+  private final WordSimilarityService wordSimilarityService;
   private final InterestRepository interestRepository;
   private final InterestKeywordRepository interestKeywordRepository;
   private final UserRepository userRepository;
   private final SubscriptionRepository subscriptionRepository;
   private final InterestMapper interestMapper;
+  private final SubscriptionMapper subscriptionMapper;
 
   @Transactional
   @Override
-  public InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest,
-      double threshold) {
-    Optional<Double> interestSimilarity = interestRepository.findMaxSimilarity(
-        interestRegisterRequest.name());
-    if (interestSimilarity.isPresent() && interestSimilarity.get() >= threshold) {
-      throw new InterestAlreadyExistException(
-          Map.of("name", interestRegisterRequest.name(), "similarity", interestSimilarity.get()));
-    }
-    Interest interest = new Interest(interestRegisterRequest.name());
-    Interest savedInterest = interestRepository.save(interest);
+  public InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest) {
+    wordSimilarityService.validateSimilarity(interestRegisterRequest.name(), SIMILARITY_THRESHOLD);
 
-    List<Keyword> keywords = keywordService.registerKeyword(interestRegisterRequest.keywords(),
-        threshold);
-    List<InterestKeyword> interestKeywords = keywords.stream()
-        .map(keyword -> new InterestKeyword(interest, keyword))
-        .toList();
-    interestKeywordRepository.saveAll(interestKeywords);
+    Interest savedInterest = interestRepository.save(new Interest(interestRegisterRequest.name()));
+    List<Keyword> keywords = saveKeywordsByInterest(savedInterest,
+        interestRegisterRequest.keywords());
 
-    List<String> keywordNames = keywords.stream().map(Keyword::getName).toList();
-    return InterestResult.fromEntity(savedInterest, keywordNames, null);
+    return interestMapper.toResult(savedInterest, keywords, null);
   }
 
+  // todo 조회 로직 개선 필요
   @Transactional(readOnly = true)
   @Override
   public CursorPageInterestResponse<InterestResult> getInterests(
       InterestSearchRequest interestSearchRequest, long userId) {
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
     List<Interest> interests = getInterests(interestSearchRequest);
@@ -90,7 +83,6 @@ public class InterestServiceImpl implements InterestService {
     if (hasNext) {
       return interests.subList(0, limit);
     }
-
     return interests;
   }
 
@@ -119,41 +111,31 @@ public class InterestServiceImpl implements InterestService {
         .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
     Interest interest = interestRepository.findById(interestId)
         .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
-    Subscription saveSubscription = subscriptionRepository.save(
-        new Subscription(interest, user.getId()));
-    interest.updateSubscriberCount(1);
+
+    Subscription saveSubscription = subscriptionRepository.save(new Subscription(interest, user));
+    interest.increaseSubscriberCount();
     interestRepository.save(interest);
 
-    List<InterestKeyword> interestKeywords = interestKeywordRepository.findByInterest_Id(
-        interestId);
-    List<String> keywords = interestKeywords.stream()
-        .map(InterestKeyword::getKeyword)
-        .map(Keyword::getName)
-        .toList();
-
-    return SubscriptionResult.fromEntity(saveSubscription, keywords);
+    return subscriptionMapper.toResult(interestId, saveSubscription);
   }
 
   @Transactional
   @Override
   public void unsubscribeInterest(long interestId, long userId) {
-    if (!userRepository.existsById(userId)) {
-      throw new UserNotFoundException(Map.of("user-id", userId));
-    }
+    validateUserExists(userId);
     Interest interest = interestRepository.findById(interestId)
         .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
 
     subscriptionRepository.deleteById(new SubscriptionId(interestId, userId));
-    interest.updateSubscriberCount(-1);
+    interest.decreaseSubscriberCount();
     interestRepository.save(interest);
   }
 
   @Transactional
   @Override
   public void deleteInterest(long interestId) {
-    if (!interestRepository.existsById(interestId)) {
-      throw new InterestNotFoundException(Map.of("interest-id", interestId));
-    }
+    validateInterestExists(interestId);
+
     interestKeywordRepository.deleteByInterest_Id(interestId);
     subscriptionRepository.deleteByInterest_Id(interestId);
     interestRepository.deleteById(interestId);
@@ -162,23 +144,41 @@ public class InterestServiceImpl implements InterestService {
   @Transactional
   @Override
   public InterestResult updateKeywordInInterest(long interestId, long userId,
-      InterestUpdateRequest interestUpdateRequest, double threshold) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
+      InterestUpdateRequest interestUpdateRequest) {
+
+    validateUserExists(userId);
     Interest interest = interestRepository.findById(interestId)
         .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
+
     interestKeywordRepository.deleteByInterest_Id(interestId);
+    List<Keyword> keywords = saveKeywordsByInterest(interest, interestUpdateRequest.keywords());
 
-    List<Keyword> keywords = keywordService.registerKeyword(interestUpdateRequest.keywords(),
-        threshold);
-    List<InterestKeyword> nextInterestKeywords = keywords.stream()
-        .map(keyword -> new InterestKeyword(interest, keyword))
+    return interestMapper.toResult(interest, keywords, userId);
+  }
+
+  private List<Keyword> saveKeywordsByInterest(Interest savedInterest, List<String> keywords) {
+    List<Keyword> savedKeywords = keywordService.registerKeyword(keywords,
+        SIMILARITY_THRESHOLD);
+    List<InterestKeyword> interestKeywords = savedKeywords.stream()
+        .map(keyword -> new InterestKeyword(savedInterest, keyword))
         .toList();
-    interestKeywordRepository.saveAll(nextInterestKeywords);
+    interestKeywordRepository.saveAll(interestKeywords);
 
-    List<String> keywordNames = keywords.stream().map(Keyword::getName).toList();
-    return InterestResult.fromEntity(interest, keywordNames,
-        subscriptionRepository.existsById(new SubscriptionId(interestId, user.getId())));
+    return savedKeywords;
+  }
+
+  private void validateUserExists(long userId) {
+    if (userRepository.existsById(userId)) {
+      return;
+    }
+    throw new UserNotFoundException(Map.of("user-id", userId));
+  }
+
+  private void validateInterestExists(long interestId) {
+    if (interestRepository.existsById(interestId)) {
+      return;
+    }
+    throw new InterestNotFoundException(Map.of("interest-id", interestId));
   }
 
 }

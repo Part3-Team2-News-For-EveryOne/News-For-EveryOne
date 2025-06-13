@@ -55,11 +55,11 @@ class NotificationServiceTest extends IntegrationTestSupport {
   @Test
   void createNotificationByInterest() {
     // given
-    User firstUser = userRepository.save(new User("1", "1", "1"));
+    User user = userRepository.save(new User("1", "1", "1"));
     Interest firstInterest = interestRepository.save(new Interest("축구"));
     Interest secondInterest = interestRepository.save(new Interest("농구"));
-    subscriptionRepository.save(new Subscription(firstInterest, firstUser.getId()));
-    subscriptionRepository.save(new Subscription(secondInterest, firstUser.getId()));
+    subscriptionRepository.save(new Subscription(firstInterest, user));
+    subscriptionRepository.save(new Subscription(secondInterest, user));
     NewsArticle firstNewsArticle = saveNewsArticle("1");
     ArticleInterest articleInterest = getArticleInterest(firstNewsArticle, firstInterest.getId());
     ArticleInterest secondArticleInterest = getArticleInterest(firstNewsArticle,
@@ -79,8 +79,8 @@ class NotificationServiceTest extends IntegrationTestSupport {
               NotificationResult::resourceId,
               NotificationResult::userId)
           .containsExactlyInAnyOrder(
-              Tuple.tuple(ResourceType.INTEREST.name(), firstInterest.getId(), firstUser.getId()),
-              Tuple.tuple(ResourceType.INTEREST.name(), secondInterest.getId(), firstUser.getId())
+              Tuple.tuple(ResourceType.INTEREST.name(), firstInterest.getId(), user.getId()),
+              Tuple.tuple(ResourceType.INTEREST.name(), secondInterest.getId(), user.getId())
           );
     });
   }
