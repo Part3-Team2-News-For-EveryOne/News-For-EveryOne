@@ -35,7 +35,6 @@ public class YonhapParser implements RssParser{
     String author = getText(item, "dc:creator");
     Instant publishedAt = parseDate(getText(item, "pubDate"));
 
-
     return new RssRawArticleDto(
         "연합RSS",
         link,

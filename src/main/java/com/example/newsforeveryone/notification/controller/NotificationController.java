@@ -7,7 +7,7 @@ import com.example.newsforeveryone.notification.service.NotificationService;
 import com.example.newsforeveryone.user.config.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,24 +26,20 @@ public class NotificationController {
   public ResponseEntity<CursorPageNotificationResponse<NotificationResult>> getAllNotification(
       @RequestParam(required = false) String cursor,
       @RequestParam(required = false) String after,
-      @RequestParam(defaultValue = "50") Integer limit
+      @RequestParam(defaultValue = "50") Integer limit,
+      @AuthenticationPrincipal CustomUserDetails userDetails
   ) {
-    CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-        .getAuthentication()
-        .getPrincipal();
-    NotificationSearchRequest notificationSearchRequest = new NotificationSearchRequest(cursor,
-        after, limit);
     CursorPageNotificationResponse<NotificationResult> notifications = notificationService.getAllIn(
-        notificationSearchRequest, userDetails.getUserId());
+        new NotificationSearchRequest(cursor, after, limit), userDetails.getUserId()
+    );
 
     return ResponseEntity.ok(notifications);
   }
 
   @PatchMapping
-  public ResponseEntity<Void> confirmAllNotifications() {
-    CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-        .getAuthentication()
-        .getPrincipal();
+  public ResponseEntity<Void> confirmAllNotifications(
+      @AuthenticationPrincipal CustomUserDetails userDetails
+  ) {
     notificationService.confirmAllNotifications(userDetails.getUserId());
 
     return ResponseEntity.noContent()
@@ -52,10 +48,8 @@ public class NotificationController {
 
   @PatchMapping("{notificationId}")
   public ResponseEntity<Void> confirmNotifications(
-      @PathVariable("notificationId") Long notificationId) {
-    CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
-        .getAuthentication()
-        .getPrincipal();
+      @PathVariable("notificationId") Long notificationId
+  ) {
     notificationService.confirmNotification(notificationId);
 
     return ResponseEntity.noContent()
