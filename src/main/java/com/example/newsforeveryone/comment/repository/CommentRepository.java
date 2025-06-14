@@ -15,63 +15,102 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
   Optional<Comment> findByIdAndDeletedAtIsNull(Long id);
 
-  //  커서 조건 적용
+  // --- 첫 페이지 조회 (커서 없을 때) ---
+
   @Query("""
-        SELECT c FROM Comment c 
-        WHERE c.articleId = :articleId 
-          AND c.deletedAt IS NULL 
-          AND (
-            :cursor IS NULL 
-            OR (
-              (:orderBy = 'createdAt' AND 
-                ( (:direction = 'ASC' AND c.createdAt > :cursor) 
-                  OR 
-                  (:direction = 'DESC' AND c.createdAt < :cursor) ))
-              OR 
-              (:orderBy = 'likeCount' AND 
-                ( (:direction = 'ASC' AND 
-                    ( c.likeCount > :likeCountCursor 
-                      OR 
-                      ( c.likeCount = :likeCountCursor AND c.id > :idCursor )))
-                  OR 
-                  (:direction = 'DESC' AND 
-                    ( c.likeCount < :likeCountCursor 
-                      OR 
-                      ( c.likeCount = :likeCountCursor AND c.id < :idCursor ))) ))
-            )
-          )
-        ORDER BY 
-          CASE WHEN :orderBy = 'createdAt' AND :direction = 'ASC' THEN c.createdAt END ASC,
-          CASE WHEN :orderBy = 'createdAt' AND :direction = 'DESC' THEN c.createdAt END DESC,
-          CASE WHEN :orderBy = 'likeCount' AND :direction = 'ASC' THEN c.likeCount END ASC,
-          CASE WHEN :orderBy = 'likeCount' AND :direction = 'DESC' THEN c.likeCount END DESC,
-          c.id ASC
+      SELECT c FROM Comment c
+      WHERE c.articleId = :articleId AND c.deletedAt IS NULL
+      ORDER BY c.createdAt DESC, c.id DESC
       """)
-  List<Comment> findCommentsWithCursor(
+  List<Comment> findFirstPageByCreatedAtDesc(
       @Param("articleId") Long articleId,
-      @Param("orderBy") String orderBy,
-      @Param("direction") String direction,
+      Pageable pageable
+  );
+
+  @Query("""
+      SELECT c FROM Comment c
+      WHERE c.articleId = :articleId AND c.deletedAt IS NULL
+      ORDER BY c.createdAt ASC, c.id ASC
+      """)
+  List<Comment> findFirstPageByCreatedAtAsc(
+      @Param("articleId") Long articleId,
+      Pageable pageable
+  );
+
+  @Query("""
+      SELECT c FROM Comment c
+      WHERE c.articleId = :articleId AND c.deletedAt IS NULL
+      ORDER BY c.likeCount DESC, c.id DESC
+      """)
+  List<Comment> findFirstPageByLikeCountDesc(
+      @Param("articleId") Long articleId,
+      Pageable pageable
+  );
+
+  @Query("""
+      SELECT c FROM Comment c
+      WHERE c.articleId = :articleId AND c.deletedAt IS NULL
+      ORDER BY c.likeCount ASC, c.id ASC
+      """)
+  List<Comment> findFirstPageByLikeCountAsc(
+      @Param("articleId") Long articleId,
+      Pageable pageable
+  );
+
+
+  // --- 커서 기반 다음 페이지 조회 ---
+
+  @Query("""
+      SELECT c FROM Comment c
+      WHERE c.articleId = :articleId
+        AND c.deletedAt IS NULL
+        AND c.createdAt < :cursor
+      ORDER BY c.createdAt DESC, c.id DESC
+      """)
+  List<Comment> findNextPageByCreatedAtDesc(
+      @Param("articleId") Long articleId,
       @Param("cursor") Instant cursor,
+      Pageable pageable
+  );
+
+  @Query("""
+      SELECT c FROM Comment c
+      WHERE c.articleId = :articleId
+        AND c.deletedAt IS NULL
+        AND c.createdAt > :cursor
+      ORDER BY c.createdAt ASC, c.id ASC
+      """)
+  List<Comment> findNextPageByCreatedAtAsc(
+      @Param("articleId") Long articleId,
+      @Param("cursor") Instant cursor,
+      Pageable pageable
+  );
+
+  @Query("""
+      SELECT c FROM Comment c
+      WHERE c.articleId = :articleId
+        AND c.deletedAt IS NULL
+        AND (c.likeCount < :likeCountCursor OR (c.likeCount = :likeCountCursor AND c.id < :idCursor))
+      ORDER BY c.likeCount DESC, c.id DESC
+      """)
+  List<Comment> findNextPageByLikeCountDesc(
+      @Param("articleId") Long articleId,
       @Param("likeCountCursor") Long likeCountCursor,
       @Param("idCursor") Long idCursor,
       Pageable pageable
   );
 
-  //  첫 번째 페이지용
   @Query("""
-        SELECT c FROM Comment c 
-        WHERE c.articleId = :articleId AND c.deletedAt IS NULL 
-        ORDER BY 
-          CASE WHEN :orderBy = 'createdAt' AND :direction = 'ASC' THEN c.createdAt END ASC,
-          CASE WHEN :orderBy = 'createdAt' AND :direction = 'DESC' THEN c.createdAt END DESC,
-          CASE WHEN :orderBy = 'likeCount' AND :direction = 'ASC' THEN c.likeCount END ASC,
-          CASE WHEN :orderBy = 'likeCount' AND :direction = 'DESC' THEN c.likeCount END DESC,
-          c.id ASC
+      SELECT c FROM Comment c
+      WHERE c.articleId = :articleId
+        AND c.deletedAt IS NULL
+        AND (c.likeCount > :likeCountCursor OR (c.likeCount = :likeCountCursor AND c.id > :idCursor))
+      ORDER BY c.likeCount ASC, c.id ASC
       """)
-  List<Comment> findCommentsWithoutCursor(
+  List<Comment> findNextPageByLikeCountAsc(
       @Param("articleId") Long articleId,
-      @Param("orderBy") String orderBy,
-      @Param("direction") String direction,
+      @Param("likeCountCursor") Long likeCountCursor,
+      @Param("idCursor") Long idCursor,
       Pageable pageable
   );
 
