@@ -7,7 +7,9 @@ import com.example.newsforeveryone.support.IntegrationTestSupport;
 import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -16,7 +18,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.transaction.annotation.Transactional;
 
 
-class InterestKeywordCustomTest extends IntegrationTestSupport {
+class InterestKeywordRepositoryTest extends IntegrationTestSupport {
 
   @Autowired
   private InterestKeywordRepository interestKeywordRepository;
@@ -42,7 +44,7 @@ class InterestKeywordCustomTest extends IntegrationTestSupport {
     String afterSubCursor = getAfter(after, savedFirstInterest);
 
     // when
-    Slice<Interest> interests = interestKeywordRepository.searchInterestByWordWithCursor(
+    Slice<Interest> interests = interestRepository.searchInterestByWordWithCursor(
         searchWord, orderBy, direction, cursor, afterSubCursor, limit
     );
 
@@ -65,6 +67,50 @@ class InterestKeywordCustomTest extends IntegrationTestSupport {
         Arguments.of("천", "subscriberCount", "desc", "1", "CREATED_AT", 2, List.of("러닝", "러닝머신")),
         Arguments.of("천", "subscriberCount", "asc", "0", "CREATED_AT", 2, List.of("러닝머신", "러닝"))
     );
+  }
+
+  @Transactional
+  @DisplayName("관심사와 관심사에 속하는 키워드를 매핑합니다.")
+  @Test
+  void groupKeywordsByInterest() {
+    // given
+    Interest savedFirstInterest = saveInterestAndKeyword("천", List.of("군산", "서울"));
+    Interest savedSecondInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
+    List<Interest> savedInterests = List.of(savedFirstInterest, savedSecondInterest);
+
+    // when
+    List<InterestKeyword> interestKeywords = interestKeywordRepository.findKeywordsByInterests(
+        savedInterests);
+
+    // then
+    Assertions.assertThat(interestKeywords)
+        .extracting(
+            interestKeyword -> interestKeyword.getInterest().getName(),
+            interestKeyword -> interestKeyword.getKeyword().getName()
+        )
+        .containsExactlyInAnyOrder(
+            Tuple.tuple("러닝머신", "중랑천"),
+            Tuple.tuple("천", "군산"),
+            Tuple.tuple("천", "서울")
+        );
+  }
+
+  @Transactional
+  @DisplayName("임계치미만, 가장 높은 유사도를 반환sss니다.")
+  @Test
+  void countInterestsBySearchWord() {
+    // given
+//    saveInterestAndKeyword("중랑구", List.of("장미", "면목"));
+//    saveInterestAndKeyword("광진구", List.of("건대", "한양대", "학교"));
+//    saveInterestAndKeyword("대학교", List.of());
+
+    String targetName = "구";
+
+    // when
+    long count = interestKeywordRepository.countInterestAndKeywordsBySearchWord(targetName);
+
+    // then
+    Assertions.assertThat(count).isEqualTo(0);
   }
 
   private String getAfter(String after, Interest savedFirstInterest) {

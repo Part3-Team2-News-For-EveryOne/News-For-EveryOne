@@ -1,18 +1,29 @@
 package com.example.newsforeveryone.interest.repository;
 
-import com.example.newsforeveryone.interest.entity.Interest;
+import com.example.newsforeveryone.interest.entity.InterestKeyword;
+import com.example.newsforeveryone.interest.entity.Keyword;
+import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.support.IntegrationTestSupport;
+import com.example.newsforeveryone.interest.entity.Interest;
+import java.util.List;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 
 class InterestRepositoryTest extends IntegrationTestSupport {
 
   @Autowired
   private InterestRepository interestRepository;
+  @Autowired
+  private KeywordRepository keywordRepository;
+  @Autowired
+  private InterestKeywordRepository interestKeywordRepository;
 
   @Transactional
   @DisplayName("임계치이상, 가장 높은 유사도를 반환합니다.")

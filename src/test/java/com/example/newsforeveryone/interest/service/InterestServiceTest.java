@@ -1,5 +1,6 @@
 package com.example.newsforeveryone.interest.service;
 
+import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.SubscriptionResult;
@@ -13,7 +14,6 @@ import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
 import com.example.newsforeveryone.interest.exception.InterestNotFoundException;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
-import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.KeywordRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
 import com.example.newsforeveryone.user.entity.User;

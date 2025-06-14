@@ -48,6 +48,7 @@ public class InterestServiceImpl implements InterestService {
   public InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest) {
     wordSimilarityService.validateSimilarity(interestRegisterRequest.name(), SIMILARITY_THRESHOLD);
 
+    // 키워드가 빈 리스트 이면 종료
     Interest savedInterest = interestRepository.save(new Interest(interestRegisterRequest.name()));
     List<Keyword> savedKeywords = keywordService.registerKeyword(interestRegisterRequest.keywords(),
         SIMILARITY_THRESHOLD);
@@ -151,7 +152,7 @@ public class InterestServiceImpl implements InterestService {
   }
 
   private Slice<Interest> findInterestsWithCursor(InterestSearchRequest interestSearchRequest) {
-    return interestKeywordRepository.searchInterestByWordWithCursor(
+    return interestRepository.searchInterestByWordWithCursor(
         interestSearchRequest.searchWord(),
         interestSearchRequest.orderBy(),
         interestSearchRequest.direction(),

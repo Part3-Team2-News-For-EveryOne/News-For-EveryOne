@@ -17,7 +17,7 @@ public class KeywordService {
   private final KeywordRepository keywordRepository;
 
   public List<Keyword> registerKeyword(List<String> requestKeywords, double threshold) {
-    if (requestKeywords == null) {
+    if (requestKeywords == null || requestKeywords.isEmpty()) {
       throw new IllegalArgumentException("키워드 값이 존재하지 않습니다.");
     }
     List<Keyword> savedKeyWords = new ArrayList<>();

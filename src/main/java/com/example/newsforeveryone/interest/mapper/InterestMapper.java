@@ -24,7 +24,6 @@ public class InterestMapper {
 
   private final SubscriptionRepository subscriptionRepository;
   private final InterestKeywordRepository interestKeywordRepository;
-  private final InterestRepository interestRepository;
 
   public InterestResult toResult(Interest interest, List<Keyword> keywords, Long userId) {
     if (userId == null) {
@@ -43,7 +42,7 @@ public class InterestMapper {
       Long userId
   ) {
     List<InterestResult> interestResults = getInterestResults(interests.getContent(), userId);
-    long totalElement = interestRepository.countInterestsBySearchWord(requestWord);
+    long totalElement = interestKeywordRepository.countInterestAndKeywordsBySearchWord(requestWord);
 
     return CursorPageInterestResponse.fromEntity(
         interestResults,
@@ -59,7 +58,7 @@ public class InterestMapper {
       Long userId
   ) {
     Map<Interest, List<Keyword>> groupedKeywordsByInterest = interestKeywordRepository
-        .groupKeywordsByInterests(interests)
+        .findKeywordsByInterests(interests)
         .stream()
         .collect(Collectors.groupingBy(
             InterestKeyword::getInterest,

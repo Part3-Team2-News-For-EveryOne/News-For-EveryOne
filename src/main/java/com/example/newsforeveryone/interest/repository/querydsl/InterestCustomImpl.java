@@ -1,21 +1,17 @@
 package com.example.newsforeveryone.interest.repository.querydsl;
 
 import com.example.newsforeveryone.interest.entity.Interest;
-import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.QInterest;
 import com.example.newsforeveryone.interest.entity.QInterestKeyword;
 import com.example.newsforeveryone.interest.entity.QKeyword;
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -24,7 +20,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
-public class InterestKeywordCustomImpl implements InterestKeywordCustom {
+public class InterestCustomImpl implements InterestCustom {
 
   private static final QInterest interest = QInterest.interest;
   private static final QKeyword keyword = QKeyword.keyword;
@@ -34,28 +30,42 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
 
   @Override
   public Slice<Interest> searchInterestByWordWithCursor(
-      String word,
+      String searchWord,
       String orderBy,
       String direction,
       String cursor,
       String after,
       Integer limit
   ) {
-    List<Interest> keywordMatchedInterests = getInterestsInKeyword(word);
     List<Interest> interests = queryFactory
         .select(interest)
         .from(interest)
-        .where((interest.in(keywordMatchedInterests).or(interest.name.containsIgnoreCase(word)))
-            .and(cursorCondition(cursor, after, orderBy, direction)))
-        .orderBy(getPrimaryOrder(orderBy, direction),
-            getSecondaryOrder(direction))
+        .where(
+            interestMatchesKeywordOrName(searchWord)
+            .and(cursorCondition(cursor, after, orderBy, direction))
+        )
+        .orderBy(
+            getPrimaryOrder(orderBy, direction),
+            getSecondaryOrder(direction)
+        )
         .limit(limit + 1)
         .fetch();
 
     boolean hasNext = interests.size() > limit;
     List<Interest> slicedInterests = getSlicedInterest(interests, hasNext, limit);
-
     return new SliceImpl<>(slicedInterests, PageRequest.of(0, limit), hasNext);
+  }
+
+  private BooleanExpression interestMatchesKeywordOrName(String word) {
+    return interest.in(
+        JPAExpressions
+            .select(interestKeyword.interest)
+            .from(interestKeyword)
+            .join(interestKeyword.keyword, keyword)
+            .where(keyword.name.containsIgnoreCase(word))
+    ).or(
+        interest.name.containsIgnoreCase(word)
+    );
   }
 
   private List<Interest> getSlicedInterest(List<Interest> interests, boolean hasNext, int limit) {
@@ -63,20 +73,6 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
       return interests.subList(0, limit);
     }
     return interests;
-  }
-
-  private List<Interest> getInterestsInKeyword(String word) {
-    List<Keyword> keywordIds = queryFactory
-        .select(keyword)
-        .from(keyword)
-        .where(keyword.name.containsIgnoreCase(word))
-        .fetch();
-
-    return queryFactory
-        .selectDistinct(interestKeyword.interest)
-        .from(interestKeyword)
-        .where(interestKeyword.keyword.in(keywordIds))
-        .fetch();
   }
 
   // TODO: 6/14/25 분기 단순화 필요
