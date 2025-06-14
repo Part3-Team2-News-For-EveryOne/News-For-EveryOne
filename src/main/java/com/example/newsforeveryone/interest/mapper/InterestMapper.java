@@ -3,10 +3,12 @@ package com.example.newsforeveryone.interest.mapper;
 import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.response.CursorPageInterestResponse;
 import com.example.newsforeveryone.interest.entity.Interest;
+import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.Subscription;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
+import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ public class InterestMapper {
 
   private final SubscriptionRepository subscriptionRepository;
   private final InterestKeywordRepository interestKeywordRepository;
+  private final InterestRepository interestRepository;
 
   public InterestResult toResult(Interest interest, List<Keyword> keywords, Long userId) {
     if (userId == null) {
@@ -40,8 +43,7 @@ public class InterestMapper {
       Long userId
   ) {
     List<InterestResult> interestResults = getInterestResults(interests.getContent(), userId);
-    Long totalElement = interestKeywordRepository.countByInterestWord(requestWord,
-        interests.getContent());
+    long totalElement = interestRepository.countInterestsBySearchWord(requestWord);
 
     return CursorPageInterestResponse.fromEntity(
         interestResults,
@@ -57,7 +59,12 @@ public class InterestMapper {
       Long userId
   ) {
     Map<Interest, List<Keyword>> groupedKeywordsByInterest = interestKeywordRepository
-        .groupKeywordsByUserInterests(interests);
+        .groupKeywordsByInterests(interests)
+        .stream()
+        .collect(Collectors.groupingBy(
+            InterestKeyword::getInterest,
+            Collectors.mapping(InterestKeyword::getKeyword, Collectors.toList())
+        ));
     Set<SubscriptionId> userSubscribedIds = findUserSubscriptions(interests, userId);
 
     return interests

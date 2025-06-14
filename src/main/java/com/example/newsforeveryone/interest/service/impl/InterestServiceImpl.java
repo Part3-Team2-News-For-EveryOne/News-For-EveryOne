@@ -151,7 +151,7 @@ public class InterestServiceImpl implements InterestService {
   }
 
   private Slice<Interest> findInterestsWithCursor(InterestSearchRequest interestSearchRequest) {
-    return interestKeywordRepository.searchInterestByWordUsingCursor(
+    return interestKeywordRepository.searchInterestByWordWithCursor(
         interestSearchRequest.searchWord(),
         interestSearchRequest.orderBy(),
         interestSearchRequest.direction(),
