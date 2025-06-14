@@ -52,7 +52,7 @@ dependencies {
 }
 
 
-def generated = 'src/main/generated'
+def generated = "build/generated/querydsl"
 
 sourceSets {
     main.java.srcDirs += [generated]
