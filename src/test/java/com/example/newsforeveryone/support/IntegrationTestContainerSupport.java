@@ -1,4 +1,4 @@
-package com.example.newsforeveryone;
+package com.example.newsforeveryone.support;
 
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;

@@ -2,7 +2,13 @@ package com.example.newsforeveryone.interest.entity;
 
 import com.example.newsforeveryone.common.entity.BaseEntity;
 import com.example.newsforeveryone.interest.entity.id.InterestKeywordId;
-import jakarta.persistence.*;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,22 +19,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class InterestKeyword extends BaseEntity {
 
-    @EmbeddedId
-    private InterestKeywordId id;
+  @EmbeddedId
+  private InterestKeywordId id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @MapsId("interestId")
-    @JoinColumn(name = "interest_id", nullable = false)
-    private Interest interest;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @MapsId("interestId")
+  @JoinColumn(name = "interest_id", nullable = false)
+  private Interest interest;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @MapsId("keywordId")
-    @JoinColumn(name = "keyword_id", nullable = false)
-    private Keyword keyword;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @MapsId("keywordId")
+  @JoinColumn(name = "keyword_id", nullable = false)
+  private Keyword keyword;
 
-    public InterestKeyword(Interest interest, Keyword keyword) {
-        this.interest = interest;
-        this.keyword = keyword;
-        this.id = new InterestKeywordId(interest.getId(), keyword.getId());
-    }
+  public InterestKeyword(Interest interest, Keyword keyword) {
+    this.interest = interest;
+    this.keyword = keyword;
+    this.id = new InterestKeywordId(interest.getId(), keyword.getId());
+  }
 }

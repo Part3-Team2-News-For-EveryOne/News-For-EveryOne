@@ -19,7 +19,6 @@ import java.util.*;
 public class KeywordInterestCache {
 
   private final InterestKeywordRepository interestKeywordRepository;
-
   private Map<String, Set<Long>> keywordToInterestIds;
 
   @PostConstruct

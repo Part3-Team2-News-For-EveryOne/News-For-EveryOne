@@ -1,18 +1,21 @@
 package com.example.newsforeveryone.comment.repository;
 
 import com.example.newsforeveryone.comment.entity.CommentLike;
-import com.example.newsforeveryone.comment.entity.Id.CommentLikeId;
-import org.springframework.data.jpa.repository.Query;
+import com.example.newsforeveryone.comment.entity.id.CommentLikeId;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CommentLikeRepository extends JpaRepository<CommentLike, CommentLikeId> {
+
   Optional<CommentLike> findByCommentIdAndLikedUserId(Long commentId, Long userId);
+
   boolean existsByCommentIdAndLikedUserId(Long commentId, Long userId);
+
   void deleteByCommentIdAndLikedUserId(Long commentId, Long userId);
 
   // 특정 댓글의 좋아요 수 조회

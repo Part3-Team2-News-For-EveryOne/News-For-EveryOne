@@ -1,6 +1,6 @@
 package com.example.newsforeveryone.interest.repository.querydsl;
 
-import com.example.newsforeveryone.IntegrationTestSupport;
+import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;

@@ -1,6 +1,6 @@
 package com.example.newsforeveryone.interest.service;
 
-import com.example.newsforeveryone.IntegrationTestSupport;
+import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.repository.KeywordRepository;
 import com.example.newsforeveryone.interest.service.impl.KeywordService;
@@ -38,7 +38,6 @@ class KeywordServiceTest extends IntegrationTestSupport {
             softly.assertThat(registeredKeywords)
                     .extracting(Keyword::getName)
                     .containsExactlyInAnyOrder("대한민국서울이화교중랑천산책로", "중랑천", "이화교");
-
         });
     }
 

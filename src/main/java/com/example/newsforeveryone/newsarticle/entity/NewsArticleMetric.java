@@ -22,7 +22,6 @@ public class NewsArticleMetric {
   @JoinColumn(name = "article_id")
   private NewsArticle newsArticle;
 
-
   @Column(name = "comment_count")
   private Long commentCount;
 
