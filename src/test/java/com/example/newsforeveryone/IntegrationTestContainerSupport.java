@@ -3,9 +3,11 @@ package com.example.newsforeveryone;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
 
 public class IntegrationTestContainerSupport {
 
+    @Container
     private static final PostgreSQLContainer<?> POSTGRES_CONTAINER;
 
     static {

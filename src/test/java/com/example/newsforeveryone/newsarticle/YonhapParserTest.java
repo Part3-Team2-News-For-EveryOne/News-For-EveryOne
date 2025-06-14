@@ -63,7 +63,7 @@ class YonhapParserTest {
         RssRawArticleDto dto = yonhapParser.mapItem(item);
 
         assertAll("mapped dto",
-            () -> assertEquals("yonhap", dto.sourceName()),
+            () -> assertEquals("연합RSS", dto.sourceName()),
             () -> assertEquals("http://yonhapnewstv.co.kr/test-link", dto.link()),
             () -> assertEquals("테스트 제목", dto.title()),
             () -> assertEquals("요약 텍스트", dto.summary()),
