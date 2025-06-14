@@ -16,37 +16,38 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
   Optional<Comment> findByIdAndDeletedAtIsNull(Long id);
 
   //  커서 조건 적용
-  @Query("""
-        SELECT c FROM Comment c 
-        WHERE c.articleId = :articleId 
-          AND c.deletedAt IS NULL 
-          AND (
-            :cursor IS NULL 
-            OR (
-              (:orderBy = 'createdAt' AND 
-                ( (:direction = 'ASC' AND c.createdAt > :cursor) 
-                  OR 
-                  (:direction = 'DESC' AND c.createdAt < :cursor) ))
-              OR 
-              (:orderBy = 'likeCount' AND 
-                ( (:direction = 'ASC' AND 
-                    ( c.likeCount > :likeCountCursor 
-                      OR 
-                      ( c.likeCount = :likeCountCursor AND c.id > :idCursor )))
-                  OR 
-                  (:direction = 'DESC' AND 
-                    ( c.likeCount < :likeCountCursor 
-                      OR 
-                      ( c.likeCount = :likeCountCursor AND c.id < :idCursor ))) ))
-            )
-          )
-        ORDER BY 
-          CASE WHEN :orderBy = 'createdAt' AND :direction = 'ASC' THEN c.createdAt END ASC,
-          CASE WHEN :orderBy = 'createdAt' AND :direction = 'DESC' THEN c.createdAt END DESC,
-          CASE WHEN :orderBy = 'likeCount' AND :direction = 'ASC' THEN c.likeCount END ASC,
-          CASE WHEN :orderBy = 'likeCount' AND :direction = 'DESC' THEN c.likeCount END DESC,
-          c.id ASC
-      """)
+//  @Query("""
+//        SELECT c FROM Comment c
+//        WHERE c.articleId = :articleId
+//          AND c.deletedAt IS NULL
+//          AND (
+//            :cursor IS NULL
+//            OR (
+//              (:orderBy = 'createdAt' AND
+//                ( (:direction = 'ASC' AND c.createdAt > :cursor)
+//                  OR
+//                  (:direction = 'DESC' AND c.createdAt < :cursor) ))
+//              OR
+//              (:orderBy = 'likeCount' AND
+//                ( (:direction = 'ASC' AND
+//                    ( c.likeCount > :likeCountCursor
+//                      OR
+//                      ( c.likeCount = :likeCountCursor AND c.id > :idCursor )))
+//                  OR
+//                  (:direction = 'DESC' AND
+//                    ( c.likeCount < :likeCountCursor
+//                      OR
+//                      ( c.likeCount = :likeCountCursor AND c.id < :idCursor ))) ))
+//            )
+//          )
+//        ORDER BY
+//          CASE WHEN :orderBy = 'createdAt' AND :direction = 'ASC' THEN c.createdAt END ASC,
+//          CASE WHEN :orderBy = 'createdAt' AND :direction = 'DESC' THEN c.createdAt END DESC,
+//          CASE WHEN :orderBy = 'likeCount' AND :direction = 'ASC' THEN c.likeCount END ASC,
+//          CASE WHEN :orderBy = 'likeCount' AND :direction = 'DESC' THEN c.likeCount END DESC,
+//          c.id ASC
+//      """)
+  @Query("SELECT c FROM Comment c WHERE c.articleId = :articleId ")
   List<Comment> findCommentsWithCursor(
       @Param("articleId") Long articleId,
       @Param("orderBy") String orderBy,
