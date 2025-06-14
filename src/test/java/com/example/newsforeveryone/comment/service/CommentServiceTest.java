@@ -20,7 +20,6 @@ import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.time.Instant;
 import java.util.List;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -92,6 +91,7 @@ class CommentServiceTest extends IntegrationTestSupport {
             testUser2.getId()))
         .isTrue();
 
+    // 분리된 테스트 ->
     // when: 좋아요 취소
     commentService.unlikeComment(Long.valueOf(comment.id()), testUser2.getId());
 
@@ -362,7 +362,6 @@ class CommentServiceTest extends IntegrationTestSupport {
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_NOT_FOUND);
   }
 
-  @NotNull
   private NewsArticle saveNewsArticle(String link) {
     NewsArticle newsArticle = NewsArticle.builder()
         .interestIds(null)

@@ -25,6 +25,7 @@ import com.example.newsforeveryone.user.repository.UserRepository;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,60 +49,28 @@ public class InterestServiceImpl implements InterestService {
     wordSimilarityService.validateSimilarity(interestRegisterRequest.name(), SIMILARITY_THRESHOLD);
 
     Interest savedInterest = interestRepository.save(new Interest(interestRegisterRequest.name()));
-    List<Keyword> keywords = saveKeywordsByInterest(savedInterest,
-        interestRegisterRequest.keywords());
+    List<Keyword> savedKeywords = keywordService.registerKeyword(interestRegisterRequest.keywords(),
+        SIMILARITY_THRESHOLD);
+    List<Keyword> keywords = saveKeywordsByInterest(savedInterest, savedKeywords);
 
     return interestMapper.toResult(savedInterest, keywords, null);
   }
 
-  // todo 조회 로직 개선 필요
   @Transactional(readOnly = true)
   @Override
   public CursorPageInterestResponse<InterestResult> getInterests(
       InterestSearchRequest interestSearchRequest, long userId) {
-
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
-    List<Interest> interests = getInterests(interestSearchRequest);
-    boolean hasNext = interests.size() > interestSearchRequest.limit();
 
-    List<Interest> slicedInterests = getSlicedInterest(interests, hasNext,
-        interestSearchRequest.limit());
-    Map<Interest, List<String>> groupedKeywordsByInterest = interestKeywordRepository.groupKeywordsByInterest(
-        slicedInterests);
+    Slice<Interest> interests = findInterestsWithCursor(interestSearchRequest);
 
     return interestMapper.toCursorPageResponse(
-        groupedKeywordsByInterest,
-        convertWord(interestSearchRequest),
+        interests,
+        interestSearchRequest.searchWord(),
         interestSearchRequest.orderBy(),
-        user,
-        hasNext
+        user.getId()
     );
-  }
-
-  private List<Interest> getSlicedInterest(List<Interest> interests, boolean hasNext, int limit) {
-    if (hasNext) {
-      return interests.subList(0, limit);
-    }
-    return interests;
-  }
-
-  private List<Interest> getInterests(InterestSearchRequest interestSearchRequest) {
-    return interestKeywordRepository.searchInterestByWordUsingCursor(
-        convertWord(interestSearchRequest),
-        interestSearchRequest.orderBy(),
-        interestSearchRequest.direction(),
-        interestSearchRequest.cursor(),
-        interestSearchRequest.after(),
-        interestSearchRequest.limit()
-    );
-  }
-
-  private String convertWord(InterestSearchRequest interestSearchRequest) {
-    if (interestSearchRequest.keyword() == null) {
-      return "";
-    }
-    return interestSearchRequest.keyword();
   }
 
   @Transactional
@@ -145,20 +114,20 @@ public class InterestServiceImpl implements InterestService {
   @Override
   public InterestResult updateKeywordInInterest(long interestId, long userId,
       InterestUpdateRequest interestUpdateRequest) {
-
     validateUserExists(userId);
     Interest interest = interestRepository.findById(interestId)
         .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
 
     interestKeywordRepository.deleteByInterest_Id(interestId);
-    List<Keyword> keywords = saveKeywordsByInterest(interest, interestUpdateRequest.keywords());
+    List<Keyword> savedKeywords = keywordService.registerKeyword(interestUpdateRequest.keywords(),
+        SIMILARITY_THRESHOLD);
+    List<Keyword> keywords = saveKeywordsByInterest(interest, savedKeywords);
 
     return interestMapper.toResult(interest, keywords, userId);
   }
 
-  private List<Keyword> saveKeywordsByInterest(Interest savedInterest, List<String> keywords) {
-    List<Keyword> savedKeywords = keywordService.registerKeyword(keywords,
-        SIMILARITY_THRESHOLD);
+  private List<Keyword> saveKeywordsByInterest(Interest savedInterest,
+      List<Keyword> savedKeywords) {
     List<InterestKeyword> interestKeywords = savedKeywords.stream()
         .map(keyword -> new InterestKeyword(savedInterest, keyword))
         .toList();
@@ -179,6 +148,17 @@ public class InterestServiceImpl implements InterestService {
       return;
     }
     throw new InterestNotFoundException(Map.of("interest-id", interestId));
+  }
+
+  private Slice<Interest> findInterestsWithCursor(InterestSearchRequest interestSearchRequest) {
+    return interestKeywordRepository.searchInterestByWordUsingCursor(
+        interestSearchRequest.searchWord(),
+        interestSearchRequest.orderBy(),
+        interestSearchRequest.direction(),
+        interestSearchRequest.cursor(),
+        interestSearchRequest.after(),
+        interestSearchRequest.limit()
+    );
   }
 
 }

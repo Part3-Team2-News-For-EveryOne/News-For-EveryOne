@@ -1,9 +1,12 @@
 package com.example.newsforeveryone.interest.service.impl;
 
 import com.example.newsforeveryone.interest.entity.Keyword;
+import com.example.newsforeveryone.interest.exception.InterestAlreadyExistException;
+import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.KeywordRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

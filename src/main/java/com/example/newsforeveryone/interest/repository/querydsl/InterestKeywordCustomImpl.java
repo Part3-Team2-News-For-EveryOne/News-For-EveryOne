@@ -1,4 +1,4 @@
-package com.example.newsforeveryone.interest.repository;
+package com.example.newsforeveryone.interest.repository.querydsl;
 
 import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.Keyword;
@@ -11,11 +11,15 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -25,7 +29,38 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
   private final JPAQueryFactory queryFactory;
 
   @Override
-  public Long countSearchInterest(
+  public Slice<Interest> searchInterestByWordUsingCursor(
+      String word,
+      String orderBy,
+      String direction,
+      String cursor,
+      String after,
+      Integer limit
+  ) {
+    // TODO: 6/14/25  분리 필요
+    QInterestKeyword interestKeyword = QInterestKeyword.interestKeyword;
+    QInterest interest = QInterest.interest;
+    QKeyword keyword = QKeyword.keyword;
+
+    List<Interest> keywordMatchedInterests = getInterestsInKeyword(word, interestKeyword, keyword);
+    List<Interest> interests = queryFactory
+        .select(interest)
+        .from(interest)
+        .where((interest.in(keywordMatchedInterests).or(interest.name.containsIgnoreCase(word)))
+            .and(cursorCondition(cursor, after, orderBy, direction, interest)))
+        .orderBy(getPrimaryOrder(orderBy, direction, interest),
+            getSecondaryOrder(direction, interest))
+        .limit(limit + 1)
+        .fetch();
+
+    boolean hasNext = interests.size() > limit;
+    List<Interest> slicedInterests = getSlicedInterest(interests, hasNext, limit);
+    return new SliceImpl<>(slicedInterests, PageRequest.of(0, limit), hasNext);
+  }
+
+  // TODO: 6/14/25 기본 JPA로 분할 필요
+  @Override
+  public Long countByInterestWord(
       String word,
       List<Interest> keywordMatchedInterests
   ) {
@@ -40,39 +75,17 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
     );
   }
 
-  @Override
-  public List<Interest> searchInterestByWordUsingCursor(
-      String word,
-      String orderBy,
-      String direction,
-      String cursor,
-      String after,
-      Integer limit
-  ) {
-    QInterestKeyword interestKeyword = QInterestKeyword.interestKeyword;
-    QInterest interest = QInterest.interest;
-    QKeyword keyword = QKeyword.keyword;
-    if (word == null) {
-      word = "";
+  private List<Interest> getSlicedInterest(List<Interest> interests, boolean hasNext, int limit) {
+    if (hasNext) {
+      return interests.subList(0, limit);
     }
-
-    List<Interest> keywordMatchedInterests = getInterestsInKeyword(word, interestKeyword, keyword);
-
-    return queryFactory
-        .select(interest)
-        .from(interest)
-        .where((interest.in(keywordMatchedInterests).or(interest.name.containsIgnoreCase(word)))
-            .and(cursorCondition(cursor, after, orderBy, direction, interest)))
-        .orderBy(getPrimaryOrder(orderBy, direction, interest),
-            getSecondaryOrder(direction, interest))
-        .limit(limit + 1)
-        .fetch();
+    return interests;
   }
 
   @Override
-  public Map<Interest, List<String>> groupKeywordsByInterest(List<Interest> InterestsWithWord) {
-    if (InterestsWithWord == null) {
-      return new LinkedHashMap<>();
+  public Map<Interest, List<Keyword>> groupKeywordsByUserInterests(List<Interest> interests) {
+    if (interests == null) {
+      return new HashMap<>();
     }
 
     QInterestKeyword interestKeyword = QInterestKeyword.interestKeyword;
@@ -80,29 +93,31 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
     QKeyword keyword = QKeyword.keyword;
 
     List<Tuple> result = queryFactory
-        .select(interest, keyword.name)
+        .select(interest, keyword)
         .from(interestKeyword)
         .innerJoin(interestKeyword.interest, interest)
         .innerJoin(interestKeyword.keyword, keyword)
-        .where(interest.in(InterestsWithWord))
+        .where(interest.in(interests))
         .fetch();
 
-    return groupInterests(InterestsWithWord, interest, keyword, result);
+    return groupInterests(interests, interest, keyword, result);
   }
 
-  private Map<Interest, List<String>> groupInterests(List<Interest> InterestsWithWord,
+  private Map<Interest, List<Keyword>> groupInterests(List<Interest> InterestsWithWord,
       QInterest interest, QKeyword keyword, List<Tuple> result) {
-    Map<Interest, List<String>> interestKeywordMap = new LinkedHashMap<>();
+
+    Map<Interest, List<Keyword>> interestKeywordMap = new HashMap<>();
     for (Interest interestWithWord : InterestsWithWord) {
       interestKeywordMap.put(interestWithWord, new ArrayList<>());
     }
     for (Tuple tuple : result) {
-      Interest interest1 = tuple.get(interest);
-      String keywordName = tuple.get(keyword.name);
-      if (interest1 != null && keywordName != null) {
-        interestKeywordMap.get(interest1).add(keywordName);
+      Interest interestTuple = tuple.get(interest);
+      Keyword keywordTuple = tuple.get(keyword);
+      if (interestTuple != null && keywordTuple != null) {
+        interestKeywordMap.get(interestTuple).add(keywordTuple);
       }
     }
+
     return interestKeywordMap;
   }
 
@@ -121,6 +136,7 @@ public class InterestKeywordCustomImpl implements InterestKeywordCustom {
         .fetch();
   }
 
+  // TODO: 6/14/25 분기 단순화 필요
   private BooleanBuilder cursorCondition(String cursor, String after, String orderBy,
       String direction, QInterest interest) {
     boolean isAsc = isAsc(direction);

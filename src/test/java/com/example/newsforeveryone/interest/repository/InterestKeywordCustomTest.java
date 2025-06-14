@@ -4,9 +4,6 @@ import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
-import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
-import com.example.newsforeveryone.interest.repository.InterestRepository;
-import com.example.newsforeveryone.interest.repository.KeywordRepository;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +13,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Slice;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -47,12 +45,12 @@ class InterestKeywordCustomTest extends IntegrationTestSupport {
     String afterSubCursor = getAfter(after, savedFirstInterest);
 
     // when
-    List<Interest> interests = interestKeywordRepository.searchInterestByWordUsingCursor(
+    Slice<Interest> interests = interestKeywordRepository.searchInterestByWordUsingCursor(
         searchWord, orderBy, direction, cursor, afterSubCursor, limit
     );
 
     // then
-    Assertions.assertThat(interests)
+    Assertions.assertThat(interests.getContent())
         .extracting(Interest::getName)
         .containsExactlyElementsOf(expectedResults);
   }
@@ -81,7 +79,7 @@ class InterestKeywordCustomTest extends IntegrationTestSupport {
     Interest savedSecondInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
 
     // when
-    Map<Interest, List<String>> interestListMap = interestKeywordRepository.groupKeywordsByInterest(
+    Map<Interest, List<Keyword>> interestListMap = interestKeywordRepository.groupKeywordsByUserInterests(
         List.of(savedFirstInterest, savedSecondInterest));
 
     // then
@@ -101,7 +99,7 @@ class InterestKeywordCustomTest extends IntegrationTestSupport {
   @ParameterizedTest
   void groupKeywordsByInterest_NullException(List<Interest> input) {
     // when
-    Map<Interest, List<String>> interestListMap = interestKeywordRepository.groupKeywordsByInterest(
+    Map<Interest, List<Keyword>> interestListMap = interestKeywordRepository.groupKeywordsByUserInterests(
         input);
 
     // then

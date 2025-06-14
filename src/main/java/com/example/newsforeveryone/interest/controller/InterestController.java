@@ -50,19 +50,12 @@ public class InterestController {
       @RequestParam(defaultValue = "50") Integer limit,
       @AuthenticationPrincipal CustomUserDetails userDetails
   ) {
-    InterestSearchRequest interestSearchRequest = new InterestSearchRequest(keyword, orderBy,
-        direction, cursor, after, adjustLimit(limit));
+    InterestSearchRequest interestSearchRequest = InterestSearchRequest.of(keyword, orderBy,
+        direction, cursor, after, limit);
     CursorPageInterestResponse<InterestResult> interests = interestService.getInterests(
         interestSearchRequest, userDetails.getUserId());
 
     return ResponseEntity.ok(interests);
-  }
-
-  private int adjustLimit(Integer limit) {
-    if (limit == null || limit < 50) {
-      return 50;
-    }
-    return limit;
   }
 
   @PostMapping("/{interestId}/subscriptions")

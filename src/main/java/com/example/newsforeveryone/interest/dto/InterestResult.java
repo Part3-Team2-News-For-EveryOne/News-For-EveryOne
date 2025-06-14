@@ -18,20 +18,6 @@ public record InterestResult(
     Boolean subscribedByMe
 ) {
 
-  public static InterestResult from(
-      Interest interest,
-      List<String> keywords,
-      Boolean subscribedByMe
-  ) {
-    return new InterestResult(
-        interest.getId(),
-        interest.getName(),
-        keywords,
-        interest.getSubscriberCount(),
-        subscribedByMe
-    );
-  }
-
   public static InterestResult fromEntity(
       Interest interest,
       List<Keyword> keywords,

@@ -2,6 +2,7 @@ package com.example.newsforeveryone.interest.repository;
 
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.id.InterestKeywordId;
+import com.example.newsforeveryone.interest.repository.querydsl.InterestKeywordCustom;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

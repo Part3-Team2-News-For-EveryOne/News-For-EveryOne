@@ -11,7 +11,6 @@ import com.example.newsforeveryone.interest.entity.Interest;
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
-import com.example.newsforeveryone.interest.exception.InterestAlreadyExistException;
 import com.example.newsforeveryone.interest.exception.InterestNotFoundException;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import com.example.newsforeveryone.interest.repository.InterestRepository;
@@ -34,8 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
-
-import static org.junit.Assert.assertTrue;
 
 class InterestServiceTest extends IntegrationTestSupport {
 
