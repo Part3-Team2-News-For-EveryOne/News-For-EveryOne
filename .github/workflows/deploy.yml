@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - Feature/CPG-28-CI-CD-파이프라인-구축
 
 jobs:
   test:
