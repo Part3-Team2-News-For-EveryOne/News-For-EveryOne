@@ -64,5 +64,6 @@ public class Comment extends SoftDeletableEntity {
     likes.add(commentLike);
     increaseLikeCount();
   }
+
 }
 
