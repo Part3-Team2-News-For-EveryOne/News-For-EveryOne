@@ -13,7 +13,6 @@ import com.example.newsforeveryone.comment.repository.CommentRepository;
 import com.example.newsforeveryone.comment.service.CommentService;
 import com.example.newsforeveryone.common.exception.BaseException;
 import com.example.newsforeveryone.common.exception.ErrorCode;
-import com.example.newsforeveryone.notification.service.NotificationService;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.time.Instant;
@@ -37,7 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class CommentServiceImpl implements CommentService {
 
   private final CommentRepository commentRepository;
-  private final NotificationService notificationService;
   private final CommentLikeRepository commentLikeRepository;
   private final CommentMapper commentMapper;
   private final UserRepository userRepository;
@@ -47,8 +45,7 @@ public class CommentServiceImpl implements CommentService {
       Long articleId, String orderBy, String direction,
       String cursor, Long after, Integer limit, Long requestUserId) {
 
-    CommentQueryParams params = buildQueryParams(articleId, orderBy, cursor, after, limit,
-        requestUserId, direction);
+    CommentQueryParams params = buildQueryParams(articleId, orderBy, cursor, after, limit, requestUserId, direction);
     List<Comment> comments = fetchComments(params);
     boolean hasNext = comments.size() > limit;
     if (hasNext) comments = comments.subList(0, limit);
@@ -103,17 +100,16 @@ public class CommentServiceImpl implements CommentService {
   @Transactional
   public CommentLikeResponse likeComment(Long commentId, Long requestUserId) {
     Comment comment = getCommentOrThrow(commentId);
-    if (commentLikeRepository.existsByCommentIdAndLikedUserId(commentId, requestUserId)) {
+    if (commentLikeRepository.existsByCommentIdAndLikedUserId(commentId, requestUserId))
       throw new BaseException(ErrorCode.COMMENT_LIKE_DUPLICATED);
-    }
 
     CommentLike like = commentMapper.toCommentLike(commentId, requestUserId);
     comment.addLike(like);
 
     String nickname = getUserNickname(comment.getUserId());
-    notificationService.createNotificationByComment(comment.getUserId(), requestUserId, commentId);
     return commentMapper.toCommentLikeResponse(comment, nickname);
   }
+
 
   @Override
   @Transactional
@@ -122,40 +118,34 @@ public class CommentServiceImpl implements CommentService {
     CommentLike like = commentLikeRepository.findByCommentIdAndLikedUserId(commentId, requestUserId)
         .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_LIKE_NOT_FOUND));
 
-    comment.removeLike(like);
     commentLikeRepository.delete(like);
+    comment.decreaseLikeCount();
   }
 
   @Override
   @Transactional
-  public CommentResponse updateComment(Long commentId, CommentUpdateRequest req,
-      Long requestUserId) {
-    Comment comment = getCommentOrThrow(commentId);
-    if (comment.getDeletedAt() != null) {
+  public CommentResponse updateComment(Long commentId, CommentUpdateRequest req, Long requestUserId) {
+    Comment comment = getCommentForUpdateOrDelete(commentId);
+    if (comment.getDeletedAt() != null)
       throw new BaseException(ErrorCode.COMMENT_ALREADY_DELETED);
-    }
-    if (!comment.getUserId().equals(requestUserId)) {
+    if (!comment.getUserId().equals(requestUserId))
       throw new BaseException(ErrorCode.COMMENT_UPDATE_FORBIDDEN);
-    }
 
     comment.updateContent(req.content());
-    Comment updatedComment = commentRepository.save(comment);
-    boolean likedByMe = commentLikeRepository.existsByCommentIdAndLikedUserId(commentId,
-        requestUserId);
-    String nickname = getUserNickname(updatedComment.getUserId());
-    return commentMapper.toResponse(updatedComment, nickname, likedByMe);
+    Comment updated = commentRepository.save(comment);
+    boolean likedByMe = commentLikeRepository.existsByCommentIdAndLikedUserId(commentId, requestUserId);
+    String nickname = getUserNickname(updated.getUserId());
+    return commentMapper.toResponse(updated, nickname, likedByMe);
   }
 
   @Override
   @Transactional
   public void softDeleteComment(Long commentId, Long requestUserId) {
-    Comment comment = getCommentOrThrow(commentId);
-    if (comment.getDeletedAt() != null) {
+    Comment comment = getCommentForUpdateOrDelete(commentId);
+    if (comment.getDeletedAt() != null)
       throw new BaseException(ErrorCode.COMMENT_ALREADY_DELETED);
-    }
-    if (!comment.getUserId().equals(requestUserId)) {
+    if (!comment.getUserId().equals(requestUserId))
       throw new BaseException(ErrorCode.COMMENT_DELETE_FORBIDDEN);
-    }
 
     comment.setDeletedAt(Instant.now());
     commentRepository.save(comment);
@@ -165,9 +155,8 @@ public class CommentServiceImpl implements CommentService {
   @Transactional
   public void hardDeleteComment(Long commentId, Long requestUserId) {
     Comment comment = getCommentOrThrow(commentId);
-    if (!comment.getUserId().equals(requestUserId)) {
+    if (!comment.getUserId().equals(requestUserId))
       throw new BaseException(ErrorCode.COMMENT_DELETE_FORBIDDEN);
-    }
 
     commentLikeRepository.deleteByCommentIdAndLikedUserId(commentId, requestUserId);
     commentRepository.delete(comment);
@@ -197,7 +186,8 @@ public class CommentServiceImpl implements CommentService {
     if (p.cursorTime() != null || p.idCursor() != null) {
       Long likeCountCursor = null;
       if ("likeCount".equals(p.orderBy()) && p.idCursor() != null) {
-        likeCountCursor = getCommentOrThrow(p.idCursor()).getLikeCount();
+        Comment cursorComment = getCommentForCursor(p.idCursor());
+        likeCountCursor = cursorComment.getLikeCount();
       }
       return commentRepository.findCommentsWithCursor(
           p.articleIdLong(), p.orderBy(), p.direction(), p.cursorTime(), likeCountCursor, p.idCursor(), p.pageable());
@@ -207,21 +197,30 @@ public class CommentServiceImpl implements CommentService {
   }
 
   private Set<Long> fetchLikedIds(List<Comment> comments, Long userId) {
-    if (userId == null || comments.isEmpty()) {
-      return Set.of();
-    }
+    if (userId == null || comments.isEmpty()) return Set.of();
     List<Long> ids = comments.stream().map(Comment::getId).toList();
     return new HashSet<>(
         commentLikeRepository.findLikedCommentIdsByUserIdAndCommentIds(userId, ids));
   }
 
   private void validateUser(Long reqUser, Long actualUser) {
-    if (!reqUser.equals(actualUser)) {
-      throw new BaseException(ErrorCode.UNAUTHORIZED_USER_ACCESS);
-    }
+    if (!reqUser.equals(actualUser)) throw new BaseException(ErrorCode.UNAUTHORIZED_USER_ACCESS);
   }
 
+  // 소프트 삭제 여부와 무관하게 댓글 조회 (update/delete 시에는 반드시 존재만 확인)
+  private Comment getCommentForUpdateOrDelete(Long id) {
+    return commentRepository.findById(id)
+        .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_NOT_FOUND));
+  }
+
+  // deletedAt이 null인 댓글만 조회
   private Comment getCommentOrThrow(Long id) {
+    return commentRepository.findByIdAndDeletedAtIsNull(id)
+        .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_NOT_FOUND));
+  }
+
+  // 커서용: 삭제 여부 무관하게 조회
+  private Comment getCommentForCursor(Long id) {
     return commentRepository.findById(id)
         .orElseThrow(() -> new BaseException(ErrorCode.COMMENT_NOT_FOUND));
   }
@@ -240,7 +239,6 @@ public class CommentServiceImpl implements CommentService {
       Long idCursor,
       String orderBy,
       String direction
-  ) {
+  ) {}
 
-  }
 }
