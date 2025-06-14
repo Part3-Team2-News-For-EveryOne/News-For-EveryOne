@@ -1,6 +1,7 @@
 package com.example.newsforeveryone.newsarticle.batch.config;
 
 import com.example.newsforeveryone.newsarticle.batch.dto.RawArticleDto;
+import com.example.newsforeveryone.newsarticle.batch.tasklet.NotificationTasklet;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -34,6 +35,8 @@ public class ArticleCollectJobConfig {
 
   private final ItemProcessor<RawArticleDto, NewsArticle> processor;
 
+  private final NotificationTasklet notificationTasklet;
+
   @Qualifier("ArticleItemWriter")
   private final ItemWriter<NewsArticle> writer;
 
@@ -44,6 +47,7 @@ public class ArticleCollectJobConfig {
         .incrementer(new RunIdIncrementer())
         .start(collectRssStep())
         .next(collectNaverStep())
+        .next(notificationStep())
         .build();
   }
 
@@ -74,5 +78,12 @@ public class ArticleCollectJobConfig {
         .skip(DataIntegrityViolationException.class);
 
     return step.build();
+  }
+
+  @Bean
+  public Step notificationStep() {
+    return new StepBuilder("notificationStep", jobRepository)
+        .tasklet(notificationTasklet, transactionManager)
+        .build();
   }
 }

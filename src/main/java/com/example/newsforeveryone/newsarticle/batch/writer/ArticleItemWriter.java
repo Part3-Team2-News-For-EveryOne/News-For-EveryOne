@@ -42,15 +42,8 @@ public class ArticleItemWriter implements ItemWriter<NewsArticle> {
     }
     List<ArticleInterest> articleInterests = articleInterestRepository.saveAll(
         articleInterestsToSave);
-    sendNotification(articleInterests);
   }
 
-  private void sendNotification(List<ArticleInterest> articleInterests) {
-    List<ArticleInterestId> articleInterestIds = articleInterests.stream()
-        .map(ArticleInterest::getId)
-        .toList();
-    notificationService.createNotificationByInterest(articleInterestIds);
-  }
 
 }
 

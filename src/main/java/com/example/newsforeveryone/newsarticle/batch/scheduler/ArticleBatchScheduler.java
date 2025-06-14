@@ -1,5 +1,6 @@
 package com.example.newsforeveryone.newsarticle.batch.scheduler;
 
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
@@ -18,10 +19,11 @@ public class ArticleBatchScheduler {
   private final Job articleCollectJob;
   private final Job backupNewsArticleJob;
 
-  @Scheduled(cron = "0 * * * * *") // 매 정시
+  @Scheduled(cron = "0 0/20 * * * *")
   public void runJob() throws Exception {
     JobParameters params = new JobParametersBuilder()
         .addLong("run.id", System.currentTimeMillis())
+        .addString("requestTime", Instant.now().toString())
         .toJobParameters();
     jobLauncher.run(articleCollectJob, params);
   }
