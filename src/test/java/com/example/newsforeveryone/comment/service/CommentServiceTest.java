@@ -115,7 +115,6 @@ class CommentServiceTest extends IntegrationTestSupport {
     // when & then: 동일 사용자가 다시 좋아요 시도 시 예외 발생
     assertThatThrownBy(
         () -> commentService.likeComment(Long.valueOf(comment.id()), testUser2.getId()))
-        .isInstanceOf(BaseException.class)
         .hasFieldOrPropertyWithValue("errorCode", ErrorCode.COMMENT_LIKE_DUPLICATED);
   }
 

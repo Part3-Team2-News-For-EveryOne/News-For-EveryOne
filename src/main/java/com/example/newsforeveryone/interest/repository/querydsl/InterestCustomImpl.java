@@ -42,7 +42,7 @@ public class InterestCustomImpl implements InterestCustom {
         .from(interest)
         .where(
             interestMatchesKeywordOrName(searchWord)
-            .and(cursorCondition(cursor, after, orderBy, direction))
+                .and(cursorCondition(cursor, after, orderBy, direction))
         )
         .orderBy(
             getPrimaryOrder(orderBy, direction),
@@ -56,6 +56,13 @@ public class InterestCustomImpl implements InterestCustom {
     return new SliceImpl<>(slicedInterests, PageRequest.of(0, limit), hasNext);
   }
 
+  private List<Interest> getSlicedInterest(List<Interest> interests, boolean hasNext, int limit) {
+    if (hasNext) {
+      return interests.subList(0, limit);
+    }
+    return interests;
+  }
+
   private BooleanExpression interestMatchesKeywordOrName(String word) {
     return interest.in(
         JPAExpressions
@@ -66,13 +73,6 @@ public class InterestCustomImpl implements InterestCustom {
     ).or(
         interest.name.containsIgnoreCase(word)
     );
-  }
-
-  private List<Interest> getSlicedInterest(List<Interest> interests, boolean hasNext, int limit) {
-    if (hasNext) {
-      return interests.subList(0, limit);
-    }
-    return interests;
   }
 
   // TODO: 6/14/25 분기 단순화 필요
@@ -117,21 +117,22 @@ public class InterestCustomImpl implements InterestCustom {
     if (direction == null) {
       return false;
     }
-
     return direction.equalsIgnoreCase("asc");
   }
 
   private Instant getAfter(String after, boolean isAsc) {
-    if (after == null || after.isBlank()) {
+    try {
+      return Instant.parse(after);
+    } catch (Exception e) {
       if (isAsc) {
         return Instant.EPOCH;
       }
-      return Instant.now();
     }
 
-    return Instant.parse(after);
+    return Instant.now();
   }
 
+  // 순서 고치기
   private OrderSpecifier<?> getPrimaryOrder(String orderBy, String direction) {
     boolean isAsc = isAsc(direction);
     if (orderBy.equals("subscriberCount")) {

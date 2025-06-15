@@ -5,7 +5,8 @@ import java.util.Map;
 import lombok.Getter;
 
 @Getter
-public class BaseException extends RuntimeException {
+public abstract class BaseException extends RuntimeException {
+
   private final Instant timestamp;
   private final ErrorCode errorCode;
   private final Map<String, Object> details;
@@ -20,4 +21,5 @@ public class BaseException extends RuntimeException {
     this.errorCode = errorCode;
     this.details = details;
   }
+
 }

@@ -96,13 +96,12 @@ class InterestKeywordRepositoryTest extends IntegrationTestSupport {
   }
 
   @Transactional
-  @DisplayName("임계치미만, 가장 높은 유사도를 반환sss니다.")
+  @DisplayName("검색어가 관심사 또는 키워드 이름에 포함될 경우 관련 관삼사 수를 카운트한다")
   @Test
   void countInterestsBySearchWord() {
     // given
-//    saveInterestAndKeyword("중랑구", List.of("장미", "면목"));
-//    saveInterestAndKeyword("광진구", List.of("건대", "한양대", "학교"));
-//    saveInterestAndKeyword("대학교", List.of());
+    saveInterestAndKeyword("광진구", List.of("건대", "한양대", "학교"));
+    saveInterestAndKeyword("대학교", List.of("구"));
 
     String targetName = "구";
 
@@ -110,7 +109,7 @@ class InterestKeywordRepositoryTest extends IntegrationTestSupport {
     long count = interestKeywordRepository.countInterestAndKeywordsBySearchWord(targetName);
 
     // then
-    Assertions.assertThat(count).isEqualTo(0);
+    Assertions.assertThat(count).isEqualTo(2);
   }
 
   private String getAfter(String after, Interest savedFirstInterest) {

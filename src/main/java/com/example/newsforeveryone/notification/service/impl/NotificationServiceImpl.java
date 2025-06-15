@@ -7,7 +7,7 @@ import com.example.newsforeveryone.notification.dto.NotificationResult;
 import com.example.newsforeveryone.notification.dto.request.NotificationSearchRequest;
 import com.example.newsforeveryone.notification.dto.response.CursorPageNotificationResponse;
 import com.example.newsforeveryone.notification.entity.Notification;
-import com.example.newsforeveryone.notification.exception.NotificationNotFound;
+import com.example.newsforeveryone.notification.exception.NotificationNotFoundException;
 import com.example.newsforeveryone.notification.repository.NotificationRepository;
 import com.example.newsforeveryone.notification.service.NotificationService;
 import com.example.newsforeveryone.user.entity.User;
@@ -121,7 +121,7 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public void confirmNotification(long notificationId) {
     Notification notification = notificationRepository.findById(notificationId)
-        .orElseThrow(() -> new NotificationNotFound(Map.of("notification-id", notificationId)));
+        .orElseThrow(() -> new NotificationNotFoundException(Map.of("notification-id", notificationId)));
 
     notification.confirmNotification();
     notificationRepository.save(notification);

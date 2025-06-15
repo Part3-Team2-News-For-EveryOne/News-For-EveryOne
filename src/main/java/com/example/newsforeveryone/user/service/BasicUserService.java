@@ -1,21 +1,19 @@
 package com.example.newsforeveryone.user.service;
 
-import com.example.newsforeveryone.common.exception.BaseException;
-import com.example.newsforeveryone.user.dto.UserLoginRequest;
 import com.example.newsforeveryone.user.dto.UserResponse;
 import com.example.newsforeveryone.user.dto.UserSignupRequest;
 import com.example.newsforeveryone.user.dto.UserUpdateRequest;
 import com.example.newsforeveryone.user.entity.User;
-import com.example.newsforeveryone.common.exception.ErrorCode;
+import com.example.newsforeveryone.user.exception.UserAuthenticationException;
+import com.example.newsforeveryone.user.exception.UserAuthorizationException;
+import com.example.newsforeveryone.user.exception.UserDuplicateEmailException;
+import com.example.newsforeveryone.user.exception.UserNotFoundException;
 import com.example.newsforeveryone.user.mapper.UserMapper;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +27,6 @@ public class BasicUserService implements UserService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
-  private final AuthenticationManager authenticationManager;
 
   @Override
   @Transactional
@@ -62,7 +59,8 @@ public class BasicUserService implements UserService {
 
   @Override
   @Transactional
-  public UserResponse updateUserNickname(Long userId, UserUpdateRequest request, Long requestUserId) {
+  public UserResponse updateUserNickname(Long userId, UserUpdateRequest request,
+      Long requestUserId) {
     validateUserPermission(userId, requestUserId);
     User user = findActiveUserById(userId);
     user.updateNickname(request.nickname());
@@ -73,7 +71,7 @@ public class BasicUserService implements UserService {
   @Override
   public User findActiveUserById(Long userId) {
     return userRepository.findByIdAndDeletedAtIsNull(userId)
-        .orElseThrow(() -> new BaseException(ErrorCode.USER_NOT_FOUND));
+        .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
   }
 
   @Override
@@ -85,13 +83,13 @@ public class BasicUserService implements UserService {
   @Override
   public User findUserByEmail(String email) {
     return userRepository.findByEmailAndDeletedAtIsNull(email)
-        .orElseThrow(() -> new BaseException(ErrorCode.INVALID_CREDENTIALS));
+        .orElseThrow(() -> new UserAuthenticationException(Map.of("email", email)));
   }
 
   // ======== 내부 메서드 ========
   private void validateEmailNotExists(String email) {
     if (userRepository.existsByEmailAndDeletedAtIsNull(email)) {
-      throw new BaseException(ErrorCode.DUPLICATE_EMAIL);
+      throw new UserDuplicateEmailException(Map.of("email", email));
     }
   }
 
@@ -101,7 +99,7 @@ public class BasicUserService implements UserService {
 
   private void validateUserPermission(Long userId, Long requestUserId) {
     if (!userId.equals(requestUserId)) {
-      throw new BaseException(ErrorCode.UNAUTHORIZED_USER_ACCESS);
+      throw new UserAuthorizationException(Map.of("user-id", userId, "request-userId", requestUserId));
     }
   }
 
