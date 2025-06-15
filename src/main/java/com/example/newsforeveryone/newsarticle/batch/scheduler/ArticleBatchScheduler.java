@@ -23,7 +23,7 @@ public class ArticleBatchScheduler {
 
   private final SourceRepository sourceRepository;
 
-  @Scheduled(cron = "0 0/3 * * * *")
+  @Scheduled(cron = "0 0/20 * * * *")
   public void runJob() throws Exception {
     String chosunUrl = getFeedUrlOrDefault("조선RSS", "");
     String hankyungUrl = getFeedUrlOrDefault("한경RSS", "");

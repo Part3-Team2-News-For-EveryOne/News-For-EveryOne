@@ -3,7 +3,7 @@ package com.example.newsforeveryone.newsarticle.batch.config;
 import com.example.newsforeveryone.newsarticle.batch.dto.ArticleItemNormalizer;
 import com.example.newsforeveryone.newsarticle.batch.dto.ChosunRssItemDto;
 import com.example.newsforeveryone.newsarticle.batch.dto.HankyungRssItemDto;
-import com.example.newsforeveryone.newsarticle.batch.dto.RawArticleDto;
+import com.example.newsforeveryone.newsarticle.batch.dto.NaverItemDto;
 import com.example.newsforeveryone.newsarticle.batch.dto.YonhapRssItemDto;
 import com.example.newsforeveryone.newsarticle.batch.tasklet.NotificationTasklet;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
@@ -41,6 +41,9 @@ public class ArticleCollectJobConfig {
   @Qualifier("yonhapItemReader")
   private final ItemReader<YonhapRssItemDto> yonhapItemReader;
 
+  @Qualifier("naverItemReader")
+  private final ItemReader<NaverItemDto> naverItemReader;
+
   @Qualifier("articleProcessor")
   private final ItemProcessor<ArticleItemNormalizer, NewsArticle> articleProcessor;
 
@@ -51,59 +54,47 @@ public class ArticleCollectJobConfig {
 
   @Bean
   public Job articleCollectJob() {
-    log.info(">>>> Article Collect Job Initialized");
     return new JobBuilder("articleCollectJob", jobRepository)
         .incrementer(new RunIdIncrementer())
         .start(collectChosunStep())
         .next(collectHankyungStep())
         .next(collectYonhapStep())
+        .next(collectNaverStep())
         .next(notificationStep())
         .build();
   }
 
   @Bean
   public Step collectChosunStep() {
-    return new StepBuilder("collectChosunStep", jobRepository)
-        .<ArticleItemNormalizer, NewsArticle>chunk(50, transactionManager)
-        .reader(chosunItemReader)
-        .processor(articleProcessor)
-        .writer(articleItemWriter)
-        .build();
+    return createArticleCollectionStep("collectChosunStep", chosunItemReader);
   }
 
   @Bean
   public Step collectHankyungStep() {
-    return new StepBuilder("collectHankyungStep", jobRepository)
-        .<ArticleItemNormalizer, NewsArticle>chunk(50, transactionManager)
-        .reader(hankyungItemReader)
-        .processor(articleProcessor)
-        .writer(articleItemWriter)
-        .build();
+    return createArticleCollectionStep("collectHankyungStep", hankyungItemReader);
   }
 
   @Bean
   public Step collectYonhapStep() {
-    return new StepBuilder("collectYonhapStep", jobRepository)
-        .<ArticleItemNormalizer, NewsArticle>chunk(50, transactionManager)
-        .reader(yonhapItemReader)
-        .processor(articleProcessor)
-        .writer(articleItemWriter)
-        .build();
+    return createArticleCollectionStep("collectYonhapStep", yonhapItemReader);
   }
 
-//  @Bean
-//  public Step collectNaverStep() {
-//    StepBuilder builder = new StepBuilder("collectNaverStep", jobRepository);
-//    SimpleStepBuilder<RawArticleDto, NewsArticle> step = builder
-//        .<RawArticleDto, NewsArticle>chunk(50, transactionManager)
-//        .reader(naverReader)
-//        .processor(processor)
-//        .writer(writer)
-//        .faultTolerant()
-//        .skip(DataIntegrityViolationException.class);
-//
-//    return step.build();
-//  }
+  @Bean
+  public Step collectNaverStep() {
+    return createArticleCollectionStep("collectNaverStep", naverItemReader);
+  }
+
+  private Step createArticleCollectionStep(String stepName, ItemReader<? extends ArticleItemNormalizer> reader) {
+    return new StepBuilder(stepName, jobRepository)
+        .<ArticleItemNormalizer, NewsArticle>chunk(50, transactionManager)
+        .reader(reader)
+        .processor(articleProcessor)
+        .writer(articleItemWriter)
+        .faultTolerant()
+        .skip(DataIntegrityViolationException.class)
+        .skipLimit(100)
+        .build();
+  }
 
   @Bean
   public Step notificationStep() {

@@ -1,14 +1,10 @@
 package com.example.newsforeveryone.newsarticle.batch.processor;
 
 import com.example.newsforeveryone.newsarticle.batch.dto.ArticleItemNormalizer;
-import com.example.newsforeveryone.newsarticle.batch.dto.RawArticleDto;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.springframework.batch.core.configuration.annotation.JobScope;
-import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
-import org.springframework.stereotype.Component;
 import org.springframework.web.util.HtmlUtils;
 
 @RequiredArgsConstructor
