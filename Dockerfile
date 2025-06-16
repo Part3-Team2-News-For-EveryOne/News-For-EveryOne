@@ -1,6 +1,6 @@
 # as build = as builder
 # as를 소문자로 입력하면 약간의 warn이 발생함.
-FROM amazoncorretto:17 AS builder
+FROM amazoncorretto:17 AS build
 WORKDIR /app
 
 # gradle 파일 복사
