@@ -42,8 +42,9 @@ public class NotificationServiceImpl implements NotificationService {
   @Transactional
   @Override
   public List<NotificationResult> createNotificationByInterest(
-      List<ArticleInterestId> articleInterestIds) {
-    if (articleInterestIds == null) {
+      List<ArticleInterestId> articleInterestIds
+  ) {
+    if (articleInterestIds == null || articleInterestIds.isEmpty()) {
       return List.of();
     }
 
@@ -59,25 +60,11 @@ public class NotificationServiceImpl implements NotificationService {
     return NotificationResult.FromEntity(savedNotifications);
   }
 
-  private Map<Long, List<Long>> mappingInterestToArticle(
-      Set<ArticleInterestId> articleInterestIds) {
-
-    Map<Long, List<Long>> interestIdToArticles = new HashMap<>();
-    for (ArticleInterestId articleInterestId : articleInterestIds) {
-      List<Long> articleIds = interestIdToArticles.getOrDefault(articleInterestId.getInterestId(),
-          new ArrayList<>());
-      articleIds.add(articleInterestId.getArticleId());
-      interestIdToArticles.put(articleInterestId.getInterestId(), articleIds);
-    }
-
-    return interestIdToArticles;
-  }
-
   @Transactional
   @Override
   public NotificationResult createNotificationByComment(long authorId, long likerId,
-      long commentId) {
-
+      long commentId
+  ) {
     validateUserExists(authorId);
     User liker = userRepository.findById(likerId)
         .orElseThrow(() -> new UserNotFoundException(Map.of("liker-id", likerId)));
@@ -91,8 +78,8 @@ public class NotificationServiceImpl implements NotificationService {
   @Transactional(readOnly = true)
   @Override
   public CursorPageNotificationResponse<NotificationResult> getAllIn(
-      NotificationSearchRequest notificationSearchRequest, long userId) {
-
+      NotificationSearchRequest notificationSearchRequest, long userId
+  ) {
     validateUserExists(userId);
     Instant cursor = parseCursor(notificationSearchRequest.cursor());
     PageRequest pageRequest = PageRequest.of(0, notificationSearchRequest.limit());
@@ -107,7 +94,6 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public void confirmAllNotifications(long userId) {
     validateUserExists(userId);
-
     List<Notification> notifications = notificationRepository.findAllByUserIdAndConfirmed(userId,
         false);
     for (Notification notification : notifications) {
@@ -121,7 +107,8 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public void confirmNotification(long notificationId) {
     Notification notification = notificationRepository.findById(notificationId)
-        .orElseThrow(() -> new NotificationNotFoundException(Map.of("notification-id", notificationId)));
+        .orElseThrow(
+            () -> new NotificationNotFoundException(Map.of("notification-id", notificationId)));
 
     notification.confirmNotification();
     notificationRepository.save(notification);
@@ -151,6 +138,20 @@ public class NotificationServiceImpl implements NotificationService {
       return;
     }
     throw new UserNotFoundException(Map.of("user-id", userId));
+  }
+
+  private Map<Long, List<Long>> mappingInterestToArticle(
+      Set<ArticleInterestId> articleInterestIds) {
+
+    Map<Long, List<Long>> interestIdToArticles = new HashMap<>();
+    for (ArticleInterestId articleInterestId : articleInterestIds) {
+      List<Long> articleIds = interestIdToArticles.getOrDefault(articleInterestId.getInterestId(),
+          new ArrayList<>());
+      articleIds.add(articleInterestId.getArticleId());
+      interestIdToArticles.put(articleInterestId.getInterestId(), articleIds);
+    }
+
+    return interestIdToArticles;
   }
 
 }

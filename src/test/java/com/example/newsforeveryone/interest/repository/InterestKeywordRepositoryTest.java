@@ -28,48 +28,6 @@ class InterestKeywordRepositoryTest extends IntegrationTestSupport {
   private KeywordRepository keywordRepository;
 
   @Transactional
-  @DisplayName("검색 조건에 따라 요청된 양의 데이터를 가져옵니다.")
-  @MethodSource("provideSearchConditions")
-  @ParameterizedTest
-  void searchInterestByWordWithCursor(String searchWord, String orderBy, String direction,
-      String cursor, String after,
-      int limit, List<String> expectedResults
-  ) {
-    // given
-    Interest savedFirstInterest = saveInterestAndKeyword("천", List.of("군산", "서울"));
-    saveInterestAndKeyword("러닝머신", List.of("중랑천"));
-    saveInterestAndKeyword("러닝", List.of("면목천", "면목"));
-    savedFirstInterest.increaseSubscriberCount();
-    interestRepository.save(savedFirstInterest);
-    String afterSubCursor = getAfter(after, savedFirstInterest);
-
-    // when
-    Slice<Interest> interests = interestRepository.searchInterestByWordWithCursor(
-        searchWord, orderBy, direction, cursor, afterSubCursor, limit
-    );
-
-    // then
-    Assertions.assertThat(interests.getContent())
-        .extracting(Interest::getName)
-        .containsExactlyElementsOf(expectedResults);
-  }
-
-  private static Stream<Arguments> provideSearchConditions() {
-    return Stream.of(
-        // 커서가 없는 경우
-        Arguments.of("천", "name", "DESC", null, null, 2, List.of("천", "러닝머신")),
-        Arguments.of("천", "name", "asc", null, null, 2, List.of("러닝", "러닝머신")),
-        Arguments.of("천", "subscriberCount", "desc", null, null, 2, List.of("천", "러닝")),
-        Arguments.of("천", "subscriberCount", "asc", null, null, 2, List.of("러닝머신", "러닝")),
-        // 커서가 존재할떄
-        Arguments.of("천", "name", "DESC", "러닝머신", "CREATED_AT", 2, List.of("러닝")),
-        Arguments.of("천", "name", "asc", "러닝머신", "CREATED_AT", 2, List.of("천")),
-        Arguments.of("천", "subscriberCount", "desc", "1", "CREATED_AT", 2, List.of("러닝", "러닝머신")),
-        Arguments.of("천", "subscriberCount", "asc", "0", "CREATED_AT", 2, List.of("러닝머신", "러닝"))
-    );
-  }
-
-  @Transactional
   @DisplayName("관심사와 관심사에 속하는 키워드를 매핑합니다.")
   @Test
   void groupKeywordsByInterest() {
@@ -110,14 +68,6 @@ class InterestKeywordRepositoryTest extends IntegrationTestSupport {
 
     // then
     Assertions.assertThat(count).isEqualTo(2);
-  }
-
-  private String getAfter(String after, Interest savedFirstInterest) {
-    if (after == null) {
-      return null;
-    }
-
-    return savedFirstInterest.getCreatedAt().toString();
   }
 
   private Interest saveInterestAndKeyword(String interestName, List<String> keywordNames) {

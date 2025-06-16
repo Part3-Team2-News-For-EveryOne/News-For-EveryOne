@@ -48,7 +48,6 @@ public class InterestServiceImpl implements InterestService {
   public InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest) {
     wordSimilarityService.validateSimilarity(interestRegisterRequest.name(), SIMILARITY_THRESHOLD);
 
-    // 키워드가 빈 리스트 이면 종료
     Interest savedInterest = interestRepository.save(new Interest(interestRegisterRequest.name()));
     List<Keyword> savedKeywords = keywordService.registerKeyword(interestRegisterRequest.keywords(),
         SIMILARITY_THRESHOLD);
@@ -60,7 +59,8 @@ public class InterestServiceImpl implements InterestService {
   @Transactional(readOnly = true)
   @Override
   public CursorPageInterestResponse<InterestResult> getInterests(
-      InterestSearchRequest interestSearchRequest, long userId) {
+      InterestSearchRequest interestSearchRequest, long userId
+  ) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new UserNotFoundException(Map.of("user-id", userId)));
 
@@ -114,7 +114,8 @@ public class InterestServiceImpl implements InterestService {
   @Transactional
   @Override
   public InterestResult updateKeywordInInterest(long interestId, long userId,
-      InterestUpdateRequest interestUpdateRequest) {
+      InterestUpdateRequest interestUpdateRequest
+  ) {
     validateUserExists(userId);
     Interest interest = interestRepository.findById(interestId)
         .orElseThrow(() -> new InterestNotFoundException(Map.of("interest-id", interestId)));
