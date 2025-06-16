@@ -3,25 +3,18 @@ package com.example.newsforeveryone.newsarticle.batch.processor;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.batch.core.configuration.annotation.StepScope;
-import org.springframework.stereotype.Component;
 
 
 import com.example.newsforeveryone.interest.entity.InterestKeyword;
-import jakarta.annotation.PostConstruct;
-
 
 import java.util.*;
 
-@Component
-@StepScope
 @RequiredArgsConstructor
 public class KeywordInterestCache {
 
   private final InterestKeywordRepository interestKeywordRepository;
   private Map<String, Set<Long>> keywordToInterestIds;
 
-  @PostConstruct
   public void init() {
     List<InterestKeyword> mappings = interestKeywordRepository.findAllWithKeyword();
 

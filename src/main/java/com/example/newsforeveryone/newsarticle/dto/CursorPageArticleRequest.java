@@ -24,11 +24,16 @@ public record CursorPageArticleRequest(
     String cursor,
     Instant after,
 
-    @NotNull
     @Min(value = 1)
     @Max(value = 100)
     Integer limit
 ) {
+    public CursorPageArticleRequest {
+        if (limit == null || limit == 0) {
+            limit = 20;
+        }
+    }
+
     public String getOrderByWithDefault() {
         return (this.orderBy == null) ? "publishdate" : this.orderBy.toLowerCase();
     }

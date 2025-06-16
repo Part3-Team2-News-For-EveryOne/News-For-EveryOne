@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
-public class DeleteArticleTest111 extends IntegrationTestSupport {
+public class DeleteArticleTest extends IntegrationTestSupport {
 
   @PersistenceContext
   EntityManager em;

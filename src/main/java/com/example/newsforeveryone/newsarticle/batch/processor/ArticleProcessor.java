@@ -1,25 +1,21 @@
 package com.example.newsforeveryone.newsarticle.batch.processor;
 
-import com.example.newsforeveryone.newsarticle.batch.dto.RawArticleDto;
+import com.example.newsforeveryone.newsarticle.batch.dto.ArticleItemNormalizer;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
-import org.springframework.stereotype.Component;
 import org.springframework.web.util.HtmlUtils;
 
-@Component
-@StepScope
 @RequiredArgsConstructor
-public class ArticleProcessor implements ItemProcessor<RawArticleDto, NewsArticle> {
+public class ArticleProcessor implements ItemProcessor<ArticleItemNormalizer, NewsArticle> {
 
   private final KeywordInterestCache keywordInterestCache;
 
   @Override
-  public NewsArticle process(RawArticleDto item) {
-    String cleanedSummary = cleanHtmlContent(item.description());
-    String cleanedTitle = cleanHtmlContent(item.title());
+  public NewsArticle process(ArticleItemNormalizer item) {
+    String cleanedTitle = cleanHtmlContent(item.getNormalizedTitle());
+    String cleanedSummary = cleanHtmlContent(item.getNormalizedSummary());
 
     if (cleanedSummary.isBlank() || cleanedTitle.isBlank()) {
       return null;
@@ -29,11 +25,11 @@ public class ArticleProcessor implements ItemProcessor<RawArticleDto, NewsArticl
     Set<Long> matchedInterestIds = keywordInterestCache.findInterestIdsFromContent(content);
 
     return NewsArticle.builder()
-        .sourceName(item.sourceName())
+        .sourceName(item.getNormalizedSourceName())
         .title(cleanedTitle)
-        .link(item.link())
+        .link(item.getNormalizedLink())
         .summary(cleanedSummary)
-        .publishedAt(item.publishedAt())
+        .publishedAt(item.getNormalizedPublishedAt())
         .interestIds(matchedInterestIds)
         .build();
   }
