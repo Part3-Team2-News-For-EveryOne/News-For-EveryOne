@@ -61,7 +61,7 @@ public class NewsArticleQueryRepository {
         content,
         nextCursor,
         nextAfter,
-        content.size(),
+        50,
         totalElements,
         hasNext
     );
