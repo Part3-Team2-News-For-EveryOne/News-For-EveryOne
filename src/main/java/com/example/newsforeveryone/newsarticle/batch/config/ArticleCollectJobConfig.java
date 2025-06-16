@@ -1,14 +1,19 @@
 package com.example.newsforeveryone.newsarticle.batch.config;
 
-import com.example.newsforeveryone.newsarticle.batch.dto.RawArticleDto;
+import com.example.newsforeveryone.newsarticle.batch.dto.ArticleItemNormalizer;
+import com.example.newsforeveryone.newsarticle.batch.dto.ChosunRssItemDto;
+import com.example.newsforeveryone.newsarticle.batch.dto.HankyungRssItemDto;
+import com.example.newsforeveryone.newsarticle.batch.dto.NaverItemDto;
+import com.example.newsforeveryone.newsarticle.batch.dto.YonhapRssItemDto;
+import com.example.newsforeveryone.newsarticle.batch.tasklet.NotificationTasklet;
 import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.core.step.builder.SimpleStepBuilder;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
@@ -19,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.PlatformTransactionManager;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class ArticleCollectJobConfig {
@@ -26,53 +32,74 @@ public class ArticleCollectJobConfig {
   private final JobRepository jobRepository;
   private final PlatformTransactionManager transactionManager;
 
-  @Qualifier("rssReader")
-  private final ItemReader<RawArticleDto> rssReader;
+  @Qualifier("chosunItemReader")
+  private final ItemReader<ChosunRssItemDto> chosunItemReader;
 
-  @Qualifier("naverReader")
-  private final ItemReader<RawArticleDto> naverReader;
+  @Qualifier("hankyungItemReader")
+  private final ItemReader<HankyungRssItemDto> hankyungItemReader;
 
-  private final ItemProcessor<RawArticleDto, NewsArticle> processor;
+  @Qualifier("yonhapItemReader")
+  private final ItemReader<YonhapRssItemDto> yonhapItemReader;
 
-  @Qualifier("ArticleItemWriter")
-  private final ItemWriter<NewsArticle> writer;
+  @Qualifier("naverItemReader")
+  private final ItemReader<NaverItemDto> naverItemReader;
+
+  @Qualifier("articleProcessor")
+  private final ItemProcessor<ArticleItemNormalizer, NewsArticle> articleProcessor;
+
+  @Qualifier("articleItemWriter")
+  private final ItemWriter<NewsArticle> articleItemWriter;
+
+  private final NotificationTasklet notificationTasklet;
 
   @Bean
   public Job articleCollectJob() {
-    JobBuilder builder = new JobBuilder("articleCollectJob", jobRepository);
-    return builder
+    return new JobBuilder("articleCollectJob", jobRepository)
         .incrementer(new RunIdIncrementer())
-        .start(collectRssStep())
+        .start(collectChosunStep())
+        .next(collectHankyungStep())
+        .next(collectYonhapStep())
         .next(collectNaverStep())
+        .next(notificationStep())
         .build();
   }
 
-  @Qualifier("collectRssStep")
   @Bean
-  public Step collectRssStep() {
-    StepBuilder builder = new StepBuilder("collectRssStep", jobRepository);
-    SimpleStepBuilder<RawArticleDto, NewsArticle> step = builder
-        .<RawArticleDto, NewsArticle>chunk(50, transactionManager)
-        .reader(rssReader)
-        .processor(processor)
-        .writer(writer)
-        .faultTolerant()
-        .skip(DataIntegrityViolationException.class);
+  public Step collectChosunStep() {
+    return createArticleCollectionStep("collectChosunStep", chosunItemReader);
+  }
 
-    return step.build();
+  @Bean
+  public Step collectHankyungStep() {
+    return createArticleCollectionStep("collectHankyungStep", hankyungItemReader);
+  }
+
+  @Bean
+  public Step collectYonhapStep() {
+    return createArticleCollectionStep("collectYonhapStep", yonhapItemReader);
   }
 
   @Bean
   public Step collectNaverStep() {
-    StepBuilder builder = new StepBuilder("collectNaverStep", jobRepository);
-    SimpleStepBuilder<RawArticleDto, NewsArticle> step = builder
-        .<RawArticleDto, NewsArticle>chunk(50, transactionManager)
-        .reader(naverReader)
-        .processor(processor)
-        .writer(writer)
-        .faultTolerant()
-        .skip(DataIntegrityViolationException.class);
+    return createArticleCollectionStep("collectNaverStep", naverItemReader);
+  }
 
-    return step.build();
+  private Step createArticleCollectionStep(String stepName, ItemReader<? extends ArticleItemNormalizer> reader) {
+    return new StepBuilder(stepName, jobRepository)
+        .<ArticleItemNormalizer, NewsArticle>chunk(50, transactionManager)
+        .reader(reader)
+        .processor(articleProcessor)
+        .writer(articleItemWriter)
+        .faultTolerant()
+        .skip(DataIntegrityViolationException.class)
+        .skipLimit(100)
+        .build();
+  }
+
+  @Bean
+  public Step notificationStep() {
+    return new StepBuilder("notificationStep", jobRepository)
+        .tasklet(notificationTasklet, transactionManager)
+        .build();
   }
 }

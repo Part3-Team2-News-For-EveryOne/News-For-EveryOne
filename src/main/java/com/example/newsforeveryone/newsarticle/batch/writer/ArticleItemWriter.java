@@ -8,6 +8,8 @@ import com.example.newsforeveryone.newsarticle.repository.NewsArticleRepository;
 import com.example.newsforeveryone.notification.service.NotificationService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
@@ -15,7 +17,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 @Primary
-@Component("ArticleItemWriter")
+@Component
 @RequiredArgsConstructor
 public class ArticleItemWriter implements ItemWriter<NewsArticle> {
 
@@ -25,11 +27,17 @@ public class ArticleItemWriter implements ItemWriter<NewsArticle> {
 
   @Override
   public void write(Chunk<? extends NewsArticle> chunk) throws Exception {
-    List<? extends NewsArticle> items = chunk.getItems();
+    List<NewsArticle> newArticles = filterNewArticles(chunk);
+    if (newArticles.isEmpty()) {
+      return;
+    }
 
-    List<NewsArticle> articlesToSave = new ArrayList<>(items);
-    List<NewsArticle> savedArticles = newsArticleRepository.saveAll(articlesToSave);
+    List<NewsArticle> savedArticles = newsArticleRepository.saveAll(newArticles);
 
+    saveArticleInterestsOf(savedArticles);
+  }
+
+  private void saveArticleInterestsOf(List<NewsArticle> savedArticles) {
     List<ArticleInterest> articleInterestsToSave = new ArrayList<>();
     for (NewsArticle savedArticle : savedArticles) {
       if (savedArticle.getInterestIds() == null) {
@@ -40,17 +48,26 @@ public class ArticleItemWriter implements ItemWriter<NewsArticle> {
             new ArticleInterest(new ArticleInterestId(savedArticle.getId(), interestId)));
       }
     }
-    List<ArticleInterest> articleInterests = articleInterestRepository.saveAll(
-        articleInterestsToSave);
-    sendNotification(articleInterests);
+    if (!articleInterestsToSave.isEmpty()) {
+      articleInterestRepository.saveAll(articleInterestsToSave);
+    }
   }
 
-  private void sendNotification(List<ArticleInterest> articleInterests) {
-    List<ArticleInterestId> articleInterestIds = articleInterests.stream()
-        .map(ArticleInterest::getId)
+  private List<NewsArticle> filterNewArticles(Chunk<? extends NewsArticle> chunk) {
+    List<? extends NewsArticle> items = chunk.getItems();
+    if (items.isEmpty()) {
+      return List.of();
+    }
+
+    Set<String> linksInChunk = items.stream()
+        .map(NewsArticle::getLink)
+        .collect(Collectors.toSet());
+    Set<String> existingLinks = Set.copyOf(newsArticleRepository.findLinksByLinkIn(linksInChunk));
+
+    return items.stream()
+        .filter(article -> !existingLinks.contains(article.getLink()))
+        .map(article -> (NewsArticle) article)
         .toList();
-    notificationService.createNotificationByInterest(articleInterestIds);
   }
-
 }
 
