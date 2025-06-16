@@ -16,6 +16,7 @@ import com.example.newsforeveryone.common.exception.ErrorCode;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.repository.UserRepository;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -72,11 +73,18 @@ public class CommentServiceImpl implements CommentService {
         })
         .toList();
 
-    String nextCursor = hasNext ? comments.get(comments.size() - 1).getCreatedAt().toString() : null;
-    String nextAfter = hasNext ? comments.get(comments.size() - 1).getId().toString() : null;
+    String nextCursorValue = null;
+    String nextAfterValue = null;
+
+    if (hasNext) {
+      Comment lastComment = comments.get(comments.size() - 1);
+      nextCursorValue = lastComment.getCreatedAt().toString();
+      nextAfterValue = String.valueOf(lastComment.getId());
+    }
+
     Long totalElements = getTotalCommentCount(articleId);
 
-    return commentMapper.toListResponse(responses, nextCursor, nextAfter, limit, totalElements, hasNext);
+    return commentMapper.toListResponse(responses, nextCursorValue, nextAfterValue, limit, totalElements, hasNext);
   }
 
   @Override
@@ -167,11 +175,21 @@ public class CommentServiceImpl implements CommentService {
   private CommentQueryParams buildQueryParams(
       Long articleId, String orderBy, String cursor, Long after,
       Integer limit, Long userId, String direction) {
+
+    Instant cursorTime = null;
+    if ("createdAt".equalsIgnoreCase(orderBy) && cursor != null && !cursor.equalsIgnoreCase("null")) {
+      try {
+        cursorTime = Instant.parse(cursor);
+      } catch (DateTimeParseException e) {
+        log.warn("Invalid cursor format for createdAt ordering: {}. Ignoring cursor.", cursor);
+      }
+    }
+
     return new CommentQueryParams(
         articleId,
         userId,
         PageRequest.of(0, limit + 1),
-        cursor != null ? Instant.parse(cursor) : null,
+        cursorTime,
         after,
         orderBy,
         direction
@@ -183,17 +201,35 @@ public class CommentServiceImpl implements CommentService {
   }
 
   private List<Comment> fetchComments(CommentQueryParams p) {
-    if (p.cursorTime() != null || p.idCursor() != null) {
-      Long likeCountCursor = null;
-      if ("likeCount".equals(p.orderBy()) && p.idCursor() != null) {
+    boolean isFirstPage = p.cursorTime() == null && p.idCursor() == null;
+    boolean isDesc = "DESC".equalsIgnoreCase(p.direction());
+
+    if ("likeCount".equalsIgnoreCase(p.orderBy())) {
+      if (isFirstPage) {
+        return isDesc ? commentRepository.findFirstPageByLikeCountDesc(p.articleIdLong(),
+            p.pageable())
+            : commentRepository.findFirstPageByLikeCountAsc(p.articleIdLong(), p.pageable());
+      } else {
         Comment cursorComment = getCommentForCursor(p.idCursor());
-        likeCountCursor = cursorComment.getLikeCount();
+        Long likeCountCursor = cursorComment.getLikeCount();
+        return isDesc ? commentRepository.findNextPageByLikeCountDesc(p.articleIdLong(),
+            likeCountCursor, p.idCursor(), p.pageable())
+            : commentRepository.findNextPageByLikeCountAsc(p.articleIdLong(), likeCountCursor,
+                p.idCursor(), p.pageable());
       }
-      return commentRepository.findCommentsWithCursor(
-          p.articleIdLong(), p.orderBy(), p.direction(), p.cursorTime(), likeCountCursor, p.idCursor(), p.pageable());
+    } else {
+      isFirstPage = p.cursorTime() == null;
+      if (isFirstPage) {
+        return isDesc ? commentRepository.findFirstPageByCreatedAtDesc(p.articleIdLong(),
+            p.pageable())
+            : commentRepository.findFirstPageByCreatedAtAsc(p.articleIdLong(), p.pageable());
+      } else {
+        return isDesc ? commentRepository.findNextPageByCreatedAtDesc(p.articleIdLong(),
+            p.cursorTime(), p.pageable())
+            : commentRepository.findNextPageByCreatedAtAsc(p.articleIdLong(), p.cursorTime(),
+                p.pageable());
+      }
     }
-    return commentRepository.findCommentsWithoutCursor(
-        p.articleIdLong(), p.orderBy(), p.direction(), p.pageable());
   }
 
   private Set<Long> fetchLikedIds(List<Comment> comments, Long userId) {
@@ -231,14 +267,14 @@ public class CommentServiceImpl implements CommentService {
     return user.getNickname();
   }
 
-  private record CommentQueryParams(
-      Long articleIdLong,
-      Long requestUserIdLong,
-      Pageable pageable,
-      Instant cursorTime,
-      Long idCursor,
-      String orderBy,
-      String direction
-  ) {}
+    private record CommentQueryParams(
+        Long articleIdLong,
+        Long requestUserIdLong,
+        Pageable pageable,
+        Instant cursorTime,
+        Long idCursor,
+        String orderBy,
+        String direction
+    ) {}
 
 }
