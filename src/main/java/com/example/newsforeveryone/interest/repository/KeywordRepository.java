@@ -15,11 +15,11 @@ public interface KeywordRepository extends JpaRepository<Keyword, Long> {
   @Query(value = """
       SELECT *, similarity(i.name, :keyword) AS score
       FROM keyword i
-      where similarity(i.name, :keyword) > :threshold
+      where similarity(i.name, :keyword) >= :threshold
       ORDER BY score desc 
       LIMIT 1
       """, nativeQuery = true)
-  Optional<Keyword> findMaxSimilarityKeyword(@Param("keyword") String keyword,
+  Optional<Keyword> findMaxSimilarityKeywordOverThreshold(@Param("keyword") String keyword,
       @Param("threshold") double threshold);
 
   @Query("SELECT k.id FROM Keyword k")

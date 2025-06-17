@@ -70,33 +70,20 @@ class InterestRepositoryTest extends IntegrationTestSupport {
   }
 
   @Transactional
-  @DisplayName("임계치이상, 가장 높은 유사도를 반환합니다.")
+  @DisplayName("임계치이상, 가장 높은 유사도를 가진 단어를 반환합니다.")
   @Test
-  void test_TopSimilarity() {
+  void test_TopSimilarityWord() {
     // given
-    interestRepository.save(new Interest("대한민국서울이화교중랑천산책로"));
-    String targetName = "대한민국서울이화교중랑천산책";
+    String otherName = "유사도검사테스타";
+    String similarName = "대한민국서울이화교중랑천산책";
+    Interest interest = interestRepository.save(new Interest("대한민국서울이화교중랑천산책로"));
+    interestRepository.save(new Interest(otherName));
 
     // when
-    Double maxSimilarity = interestRepository.findMaxSimilarity(targetName);
+    Interest mostSimilarInterest = interestRepository.findMostSimilarInterest(similarName);
 
     // then
-    Assertions.assertThat(maxSimilarity).isGreaterThanOrEqualTo(0.8);
-  }
-
-  @Transactional
-  @DisplayName("임계치미만, 가장 높은 유사도를 반환합니다.")
-  @Test
-  void test_UnderThreshold() {
-    // given
-    interestRepository.save(new Interest("대한민국서울이화교중랑천산책로"));
-    String targetName = "대한민국서울이화교중랑천산책길";
-
-    // when
-    Double maxSimilarity = interestRepository.findMaxSimilarity(targetName);
-
-    // then
-    Assertions.assertThat(maxSimilarity).isLessThan(0.8);
+    Assertions.assertThat(mostSimilarInterest.getName()).isEqualTo(interest.getName());
   }
 
   private String getAfter(String after, Interest savedFirstInterest) {

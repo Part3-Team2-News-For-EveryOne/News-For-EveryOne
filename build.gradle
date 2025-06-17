@@ -53,6 +53,7 @@ dependencies {
 
     testImplementation "org.testcontainers:junit-jupiter:1.19.3"
     testImplementation "org.testcontainers:postgresql:1.19.3"
+    implementation 'org.apache.commons:commons-text:1.10.0'
 }
 
 

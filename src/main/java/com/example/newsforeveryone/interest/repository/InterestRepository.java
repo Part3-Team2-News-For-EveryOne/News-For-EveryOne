@@ -11,9 +11,11 @@ import org.springframework.stereotype.Repository;
 public interface InterestRepository extends JpaRepository<Interest, Long>, InterestCustom {
 
   @Query(value = """
-      SELECT COALESCE(MAX(similarity(i.name, :interest)), 0)
-      FROM Interest i
-      """, nativeQuery = true)
-  Double findMaxSimilarity(@Param("interest") String interest);
+     SELECT *
+     FROM interest
+     ORDER BY similarity(name, :interestName) DESC
+     LIMIT 1
+     """, nativeQuery = true)
+  Interest findMostSimilarInterest(@Param("interestName") String interestName);
 
 }
