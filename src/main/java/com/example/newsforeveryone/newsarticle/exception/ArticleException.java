@@ -4,9 +4,10 @@ import com.example.newsforeveryone.common.exception.BaseException;
 import com.example.newsforeveryone.common.exception.ErrorCode;
 import java.util.Map;
 
-public class ArticleException extends BaseException {
+public abstract class ArticleException extends BaseException {
 
   public ArticleException(ErrorCode errorCode, Map<String, Object> details) {
     super(errorCode, details);
   }
+
 }

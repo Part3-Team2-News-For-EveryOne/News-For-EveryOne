@@ -154,8 +154,7 @@ public class NewsArticleServiceImpl implements NewsArticleService {
   @Override
   public void softDeleteArticle(Long articleId) {
     NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
-        .orElseThrow(
-            () -> new BaseException(ErrorCode.ARTICLE_NOT_FOUND, Map.of("articleId", articleId)));
+        .orElseThrow(() -> new ArticleNotFoundException(Map.of("articleId", articleId)));
     matchingNewsArticle.setDeletedAt(Instant.now());
     newsArticleRepository.save(matchingNewsArticle);
     log.info("Article logically deleted. articleId: {}", articleId);
@@ -164,8 +163,7 @@ public class NewsArticleServiceImpl implements NewsArticleService {
   @Override
   public void hardDeleteArticle(Long articleId) {
     NewsArticle matchingNewsArticle = newsArticleRepository.findById(articleId)
-        .orElseThrow(
-            () -> new BaseException(ErrorCode.ARTICLE_NOT_FOUND, Map.of("articleId", articleId)));
+        .orElseThrow(() -> new ArticleNotFoundException(Map.of("articleId", articleId)));
     newsArticleRepository.delete(matchingNewsArticle);
     log.info("Article physically deleted. articleId: {}", articleId);
   }

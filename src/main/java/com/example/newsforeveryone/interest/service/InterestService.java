@@ -9,8 +9,7 @@ import com.example.newsforeveryone.interest.dto.response.CursorPageInterestRespo
 
 public interface InterestService {
 
-  InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest,
-      double threshold);
+  InterestResult registerInterest(InterestRegisterRequest interestRegisterRequest);
 
   CursorPageInterestResponse<InterestResult> getInterests(
       InterestSearchRequest interestSearchRequest, long userId);
@@ -22,6 +21,6 @@ public interface InterestService {
   void deleteInterest(long interestId);
 
   InterestResult updateKeywordInInterest(long interestId, long userId,
-      InterestUpdateRequest interestUpdateRequest, double threshold);
+      InterestUpdateRequest interestUpdateRequest);
 
 }

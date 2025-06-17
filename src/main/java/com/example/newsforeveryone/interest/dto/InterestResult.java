@@ -1,6 +1,7 @@
 package com.example.newsforeveryone.interest.dto;
 
 import com.example.newsforeveryone.interest.entity.Interest;
+import com.example.newsforeveryone.interest.entity.Keyword;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
@@ -19,13 +20,17 @@ public record InterestResult(
 
   public static InterestResult fromEntity(
       Interest interest,
-      List<String> keywords,
+      List<Keyword> keywords,
       Boolean subscribedByMe
   ) {
+    List<String> keywordNames = keywords.stream()
+        .map(Keyword::getName)
+        .toList();
+
     return new InterestResult(
         interest.getId(),
         interest.getName(),
-        keywords,
+        keywordNames,
         interest.getSubscriberCount(),
         subscribedByMe
     );

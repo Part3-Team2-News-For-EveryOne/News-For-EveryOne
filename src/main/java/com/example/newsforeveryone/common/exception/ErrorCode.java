@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 public enum ErrorCode {
+
   // 사용자 관련
   INVALID_CREDENTIALS(401, "U01", "이메일 또는 비밀번호가 올바르지 않습니다"),
   UNAUTHORIZED_USER_ACCESS(403, "U02", "해당 사용자에 대한 권한이 없습니다"),
@@ -15,7 +16,9 @@ public enum ErrorCode {
   // 관심사 관련
   INTEREST_NOT_FOUND(404, "I1", "관심사를 찾을 수 없습니다."),
   INTEREST_AlREADY_EXIST(404, "I2", "유사한 관심사가 이미 존재합니다."),
+  INTEREST_KEYWORD_MISSING(404, "I3", "관심사 등록시 키워드가 한개 이상 필요합니다"),
 
+  // 알림 관련
   NOTIFICATION_NOT_FOUND(404, "N2", "알림을 찾을 수 없습니다."),
 
   // 댓글 관련

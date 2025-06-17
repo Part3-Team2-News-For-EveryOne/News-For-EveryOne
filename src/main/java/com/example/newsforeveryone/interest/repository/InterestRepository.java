@@ -1,19 +1,19 @@
 package com.example.newsforeveryone.interest.repository;
 
 import com.example.newsforeveryone.interest.entity.Interest;
-import java.util.Optional;
+import com.example.newsforeveryone.interest.repository.querydsl.InterestCustom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface InterestRepository extends JpaRepository<Interest, Long> {
+public interface InterestRepository extends JpaRepository<Interest, Long>, InterestCustom {
 
   @Query(value = """
-      SELECT MAX(similarity(i.name, :interest))
-      FROM interest i
+      SELECT COALESCE(MAX(similarity(i.name, :interest)), 0)
+      FROM Interest i
       """, nativeQuery = true)
-  Optional<Double> findMaxSimilarity(@Param("interest") String interest);
+  Double findMaxSimilarity(@Param("interest") String interest);
 
 }

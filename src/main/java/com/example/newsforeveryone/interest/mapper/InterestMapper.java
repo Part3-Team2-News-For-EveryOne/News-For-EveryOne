@@ -3,17 +3,19 @@ package com.example.newsforeveryone.interest.mapper;
 import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.response.CursorPageInterestResponse;
 import com.example.newsforeveryone.interest.entity.Interest;
+import com.example.newsforeveryone.interest.entity.InterestKeyword;
+import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.Subscription;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
+import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
-import com.example.newsforeveryone.user.entity.User;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -23,79 +25,104 @@ public class InterestMapper {
   private final SubscriptionRepository subscriptionRepository;
   private final InterestKeywordRepository interestKeywordRepository;
 
-  public CursorPageInterestResponse<InterestResult> toCursorPageResponse(
-      Map<Interest, List<String>> interestListMap,
-      String word,
-      String orderBy,
-      User user,
-      boolean hasNext
-  ) {
-    List<InterestResult> interestResults = getInterestResults(interestListMap, user);
+  public InterestResult toResult(Interest interest, List<Keyword> keywords, Long userId) {
+    if (userId == null) {
+      return InterestResult.fromEntity(interest, keywords, null);
+    }
+    SubscriptionId subscriptionId = new SubscriptionId(interest.getId(), userId);
+    boolean exists = subscriptionRepository.existsById(subscriptionId);
 
-    String nextCursor = getNextCursor(interestListMap, orderBy);
-    String nextAfter = getNextAfter(interestListMap);
-    Long totalElement = interestKeywordRepository.countSearchInterest(word,
-        interestListMap.keySet().stream().toList());
+    return InterestResult.fromEntity(interest, keywords, exists);
+  }
+
+  public CursorPageInterestResponse<InterestResult> toCursorPageResponse(
+      Slice<Interest> interests,
+      String requestWord,
+      String orderBy,
+      Long userId
+  ) {
+    List<InterestResult> interestResults = getInterestResults(interests.getContent(), userId);
+    long totalElement = interestKeywordRepository.countInterestAndKeywordsBySearchWord(requestWord);
+
     return CursorPageInterestResponse.fromEntity(
         interestResults,
-        nextCursor,
-        nextAfter,
+        getNextCursor(interests.getContent(), orderBy),
+        getNextAfter(interests.getContent()),
         totalElement,
-        hasNext
+        interests.hasNext()
     );
   }
 
-  private List<InterestResult> getInterestResults(Map<Interest, List<String>> interestListMap,
-      User user) {
-    Set<SubscriptionId> subscriptionIds = interestListMap.keySet()
+  private List<InterestResult> getInterestResults(
+      List<Interest> interests,
+      Long userId
+  ) {
+    Map<Interest, List<Keyword>> groupedKeywordsByInterest = interestKeywordRepository
+        .findKeywordsByInterests(interests)
         .stream()
-        .map(Interest::getId)
-        .map(interestId -> new SubscriptionId(interestId, user.getId()))
-        .collect(Collectors.toSet());
-    Set<SubscriptionId> subscribedIds = subscriptionRepository.findAllById(subscriptionIds)
-        .stream()
-        .map(Subscription::getId)
-        .collect(Collectors.toSet());
+        .collect(Collectors.groupingBy(
+            InterestKeyword::getInterest,
+            Collectors.mapping(InterestKeyword::getKeyword, Collectors.toList())
+        ));
+    Set<SubscriptionId> userSubscribedIds = findUserSubscriptions(interests, userId);
 
-    return interestListMap.entrySet()
+    return interests
         .stream()
-        .map(entry -> getInterestResult(user, subscribedIds, entry))
+        .map(interest -> toInterestResult(
+            interest,
+            groupedKeywordsByInterest,
+            userId,
+            userSubscribedIds
+        ))
         .toList();
   }
 
-  private String getNextAfter(Map<Interest, List<String>> interestListMap) {
-    if (interestListMap.isEmpty()) {
-      return null;
-    }
-    Set<Interest> interests = interestListMap.keySet();
-    List<Interest> interestList = new ArrayList<>(interests);
-    Interest last = interestList.get(interestList.size() - 1);
+  private Set<SubscriptionId> findUserSubscriptions(List<Interest> interests, Long userId) {
+    Set<SubscriptionId> subscriptionIds = interests
+        .stream()
+        .map(interest -> new SubscriptionId(interest.getId(), userId))
+        .collect(Collectors.toSet());
 
-    return last.getCreatedAt().toString();
+    return subscriptionRepository.findAllById(subscriptionIds)
+        .stream()
+        .map(Subscription::getId)
+        .collect(Collectors.toSet());
   }
 
-  private String getNextCursor(Map<Interest, List<String>> interestListMap, String orderBy) {
-    if (interestListMap.isEmpty()) {
+  private InterestResult toInterestResult(
+      Interest interest,
+      Map<Interest, List<Keyword>> groupedKeywordsByInterest,
+      Long userId,
+      Set<SubscriptionId> subscribedIds
+  ) {
+    boolean isSubscribed = subscribedIds.contains(new SubscriptionId(interest.getId(), userId));
+    return InterestResult.fromEntity(
+        interest,
+        groupedKeywordsByInterest.get(interest),
+        isSubscribed
+    );
+  }
+
+  private String getNextAfter(List<Interest> interests) {
+    if (interests.isEmpty()) {
       return null;
     }
+    Interest lastInterest = interests.get(interests.size() - 1);
 
-    Set<Interest> interests = interestListMap.keySet();
-    List<Interest> interestList = new ArrayList<>(interests);
-    Interest last = interestList.get(interestList.size() - 1);
+    return lastInterest.getCreatedAt()
+        .toString();
+  }
+
+  private String getNextCursor(List<Interest> interests, String orderBy) {
+    if (interests.isEmpty()) {
+      return null;
+    }
+    Interest lastInterest = interests.get(interests.size() - 1);
     if (orderBy.equals("subscriberCount")) {
-      return String.valueOf(last.getSubscriberCount());
+      return String.valueOf(lastInterest.getSubscriberCount());
     }
 
-    return String.valueOf(last.getName());
-  }
-
-  private InterestResult getInterestResult(User user, Set<SubscriptionId> subscribedIds,
-      Map.Entry<Interest, List<String>> entry) {
-    Interest interest = entry.getKey();
-    List<String> keywords = entry.getValue();
-    boolean isSubscribed = subscribedIds.contains(
-        new SubscriptionId(interest.getId(), user.getId()));
-    return InterestResult.fromEntity(interest, keywords, isSubscribed);
+    return lastInterest.getName();
   }
 
 }

@@ -79,7 +79,8 @@ class UserActivityQueryRepositoryTest extends IntegrationTestSupport {
       createComment(anotherUser, article, "다른 사용자 댓글");
 
       // when
-      List<CommentActivityProjection> projections = userActivityQueryRepository.findCommentActivities(user.getId(), 10);
+      List<CommentActivityProjection> projections = userActivityQueryRepository.findCommentActivities(
+          user.getId(), 10);
 
       // then
       assertThat(projections).hasSize(2)
@@ -94,7 +95,8 @@ class UserActivityQueryRepositoryTest extends IntegrationTestSupport {
       User user = createUser("user@test.com", "본인");
 
       // when
-      List<CommentActivityProjection> projections = userActivityQueryRepository.findCommentActivities(user.getId(), 10);
+      List<CommentActivityProjection> projections = userActivityQueryRepository.findCommentActivities(
+          user.getId(), 10);
 
       // then
       assertThat(projections).isEmpty();
@@ -122,11 +124,13 @@ class UserActivityQueryRepositoryTest extends IntegrationTestSupport {
       createSubscription(user, interestWithoutKeywords);
 
       // when
-      List<SubscriptionActivityProjection> projections = userActivityQueryRepository.findSubscriptionActivities(user.getId());
+      List<SubscriptionActivityProjection> projections = userActivityQueryRepository.findSubscriptionActivities(
+          user.getId());
 
       // then
       assertThat(projections).hasSize(2)
-          .extracting(SubscriptionActivityProjection::interestName, SubscriptionActivityProjection::interestKeywords)
+          .extracting(SubscriptionActivityProjection::interestName,
+              SubscriptionActivityProjection::interestKeywords)
           .containsExactlyInAnyOrder(
               tuple("축구", List.of("메시", "호날두")),
               tuple("정치", List.of())
@@ -151,7 +155,8 @@ class UserActivityQueryRepositoryTest extends IntegrationTestSupport {
       createCommentLike(likingUser, comment2);
 
       // when
-      List<CommentLikeActivityProjection> projections = userActivityQueryRepository.findCommentLikeActivities(likingUser.getId(), 10);
+      List<CommentLikeActivityProjection> projections = userActivityQueryRepository.findCommentLikeActivities(
+          likingUser.getId(), 10);
 
       // then
       assertThat(projections).hasSize(2)
@@ -175,7 +180,8 @@ class UserActivityQueryRepositoryTest extends IntegrationTestSupport {
       createArticleView(viewer, article2);
 
       // when
-      List<ArticleViewActivityProjection> projections = userActivityQueryRepository.findArticleViewActivities(viewer.getId(), 10);
+      List<ArticleViewActivityProjection> projections = userActivityQueryRepository.findArticleViewActivities(
+          viewer.getId(), 10);
 
       // then
       assertThat(projections).hasSize(2)
@@ -227,7 +233,7 @@ class UserActivityQueryRepositoryTest extends IntegrationTestSupport {
   }
 
   private Subscription createSubscription(User user, Interest interest) {
-    return subscriptionRepository.save(new Subscription(interest, user.getId()));
+    return subscriptionRepository.save(new Subscription(interest, user));
   }
 
   private CommentLike createCommentLike(User user, Comment comment) {
@@ -238,7 +244,8 @@ class UserActivityQueryRepositoryTest extends IntegrationTestSupport {
   }
 
   private ArticleView createArticleView(User user, NewsArticle article) {
-    return articleViewRepository.save(new ArticleView(new ArticleViewId(article.getId(), user.getId()), Instant.now()));
+    return articleViewRepository.save(
+        new ArticleView(new ArticleViewId(article.getId(), user.getId()), Instant.now()));
   }
 
 }

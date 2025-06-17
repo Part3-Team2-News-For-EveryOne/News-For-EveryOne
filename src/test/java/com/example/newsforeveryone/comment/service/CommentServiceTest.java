@@ -91,11 +91,13 @@ class CommentServiceTest extends IntegrationTestSupport {
     CommentResponse comment = commentService.createComment(createRequest, testUser1.getId());
 
     // when
-    CommentLikeResponse likeResponse = commentService.likeComment(Long.valueOf(comment.id()), testUser2.getId());
+    CommentLikeResponse likeResponse = commentService.likeComment(Long.valueOf(comment.id()),
+        testUser2.getId());
 
     // then
     assertThat(likeResponse.commentLikeCount()).isEqualTo(1L);
-    assertThat(commentLikeRepository.existsByCommentIdAndLikedUserId(Long.valueOf(comment.id()), testUser2.getId()))
+    assertThat(commentLikeRepository.existsByCommentIdAndLikedUserId(Long.valueOf(comment.id()),
+        testUser2.getId()))
         .isTrue();
   }
 
@@ -112,7 +114,8 @@ class CommentServiceTest extends IntegrationTestSupport {
     commentService.unlikeComment(Long.valueOf(comment.id()), testUser2.getId());
 
     // then
-    assertThat(commentLikeRepository.existsByCommentIdAndLikedUserId(Long.valueOf(comment.id()), testUser2.getId()))
+    assertThat(commentLikeRepository.existsByCommentIdAndLikedUserId(Long.valueOf(comment.id()),
+        testUser2.getId()))
         .isFalse();
   }
 
@@ -441,11 +444,12 @@ class CommentServiceTest extends IntegrationTestSupport {
       // then : 첫 페이지 결과 검증
       assertThat(page1.content()).hasSize(limit);
       assertThat(page1.hasNext()).isTrue();
-      assertThat(page1.content().get(0).id()).isEqualTo(String.valueOf(expectedOrder.get(0).getId()));
-      assertThat(page1.content().get(1).id()).isEqualTo(String.valueOf(expectedOrder.get(1).getId()));
+      assertThat(page1.content().get(0).id()).isEqualTo(
+          String.valueOf(expectedOrder.get(0).getId()));
+      assertThat(page1.content().get(1).id()).isEqualTo(
+          String.valueOf(expectedOrder.get(1).getId()));
       assertThat(page1.content().get(0).likeCount()).isEqualTo(3L);
       assertThat(page1.content().get(1).likeCount()).isEqualTo(2L);
-
 
       // given
       String cursor = page1.nextCursor(); // 이 값은 사용되지 않음 (구현상 after만 사용)
@@ -458,8 +462,10 @@ class CommentServiceTest extends IntegrationTestSupport {
       // then : 두 번째 페이지 결과 검증
       assertThat(page2.content()).hasSize(limit);
       assertThat(page2.hasNext()).isTrue();
-      assertThat(page2.content().get(0).id()).isEqualTo(String.valueOf(expectedOrder.get(2).getId()));
-      assertThat(page2.content().get(1).id()).isEqualTo(String.valueOf(expectedOrder.get(3).getId()));
+      assertThat(page2.content().get(0).id()).isEqualTo(
+          String.valueOf(expectedOrder.get(2).getId()));
+      assertThat(page2.content().get(1).id()).isEqualTo(
+          String.valueOf(expectedOrder.get(3).getId()));
       assertThat(page2.content().get(0).likeCount()).isEqualTo(2L);
       assertThat(page2.content().get(1).likeCount()).isEqualTo(1L);
 
@@ -474,7 +480,8 @@ class CommentServiceTest extends IntegrationTestSupport {
       // then : 세 번째 페이지 결과 검증
       assertThat(page3.content()).hasSize(1);
       assertThat(page3.hasNext()).isFalse();
-      assertThat(page3.content().get(0).id()).isEqualTo(String.valueOf(expectedOrder.get(4).getId()));
+      assertThat(page3.content().get(0).id()).isEqualTo(
+          String.valueOf(expectedOrder.get(4).getId()));
       assertThat(page3.content().get(0).likeCount()).isEqualTo(0L);
     }
 
@@ -505,4 +512,3 @@ class CommentServiceTest extends IntegrationTestSupport {
   }
 
 }
-

@@ -2,6 +2,7 @@ package com.example.newsforeveryone.interest.entity;
 
 import com.example.newsforeveryone.common.entity.BaseEntity;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
+import com.example.newsforeveryone.user.entity.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -30,13 +31,19 @@ public class Subscription extends BaseEntity {
   @JoinColumn(name = "interest_id", nullable = false)
   private Interest interest;
 
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @MapsId("userId")
+  @JoinColumn(name = "subscriber_id", nullable = false)
+  private User user;
+
   @CreatedDate
   @Column(name = "subscribed_at", nullable = false)
   private Instant subscribeAt;
 
-  public Subscription(Interest interest, Long userId) {
+  public Subscription(Interest interest, User user) {
     this.interest = interest;
-    this.id = new SubscriptionId(interest.getId(), userId);
+    this.user = user;
+    this.id = new SubscriptionId(interest.getId(), user.getId());
   }
 
 }
