@@ -44,12 +44,17 @@ public class NaverItemReader implements ItemReader<NaverItemDto> {
   @Override
   public NaverItemDto read() {
     if (currentItemIndexInBuffer >= itemBuffer.size()) {
-      fetchItemsForNextKeyword();
-    }
-
-    if (itemBuffer.isEmpty() || currentItemIndexInBuffer >= itemBuffer.size()) {
-      log.info("네이버 키워드 검색 완료");
-      return null;
+      while(true){
+        fetchItemsForNextKeyword();
+        if(currentKeywordIndex >= keywords.size()){
+          log.info("네이버 키워드 검색 완료");
+          return null;
+        }
+        else if(itemBuffer.isEmpty()){
+          log.info("키워드로 검색된 기사 없음");
+        }
+        else break;
+      }
     }
 
     return itemBuffer.get(currentItemIndexInBuffer++);
