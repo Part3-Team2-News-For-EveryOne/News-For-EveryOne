@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +24,25 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 @Component
 public class RequestFilter implements Filter {
 
+  private static final List<String> EXCLUDE_PREFIXES = List.of(
+      "/css", "/js", "/images", "/static", "/favicon.ico", "/webjars", "/assets"
+  );
+
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
+
+    HttpServletRequest httpRequest = (HttpServletRequest) request;
+    String uri = httpRequest.getRequestURI();
+
+    request.setCharacterEncoding("UTF-8");
+    response.setCharacterEncoding("UTF-8");
+
+    // ✅ 정적 리소스 요청은 필터 제외
+    if (isStaticResource(uri)) {
+      chain.doFilter(request, response);
+      return;
+    }
 
     // 래퍼로 감싸기 (Body 재사용을 위해)
     ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(
@@ -67,6 +84,10 @@ public class RequestFilter implements Filter {
       // MDC 클리어 (메모리 누수 방지)
       MDC.clear();
     }
+  }
+
+  private boolean isStaticResource(String uri) {
+    return EXCLUDE_PREFIXES.stream().anyMatch(uri::startsWith);
   }
 
   private Map<String, String> getHeaders(HttpServletRequest request) {
