@@ -1,9 +1,8 @@
 package com.example.newsforeveryone.newsarticle.repository;
 
-import com.example.newsforeveryone.newsarticle.dto.ArticleDto;
 import com.example.newsforeveryone.newsarticle.dto.CursorPageArticleRequest;
-import com.example.newsforeveryone.newsarticle.dto.CursorPageResponseArticleDto;
-import com.example.newsforeveryone.newsarticle.dto.QArticleDto;
+import com.example.newsforeveryone.newsarticle.repository.projection.ArticleProjection;
+import com.example.newsforeveryone.newsarticle.repository.projection.QArticleProjection;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -30,44 +29,7 @@ public class NewsArticleQueryRepository {
 
   private final JPAQueryFactory queryFactory;
 
-  public CursorPageResponseArticleDto findArticlePage(CursorPageArticleRequest request,
-      Long userId) {
-
-    List<ArticleDto> content = fetchArticles(request, userId);
-    Long totalElements = fetchTotalCount(request);
-
-
-    boolean hasNext = content.size() > request.limit();
-    if (hasNext) {
-      content.remove(request.limit().intValue());
-    }
-
-    String nextCursor = null;
-    Instant nextAfter = null;
-    if (hasNext && !content.isEmpty()) {
-      ArticleDto lastArticle = content.get(content.size() - 1);
-      String orderBy = request.getOrderByWithDefault();
-
-      nextAfter = lastArticle.publishDate();
-
-      nextCursor = switch (orderBy) {
-        case "commentcount" -> lastArticle.commentCount().toString();
-        case "viewcount" -> lastArticle.viewCount().toString();
-        default -> lastArticle.publishDate().toString();
-      };
-    }
-
-    return new CursorPageResponseArticleDto(
-        content,
-        nextCursor,
-        nextAfter,
-        50,
-        totalElements,
-        hasNext
-    );
-  }
-
-  private Long fetchTotalCount(CursorPageArticleRequest request) {
+  public Long fetchTotalCount(CursorPageArticleRequest request) {
     return queryFactory
         .select(newsArticle.id.count())
         .from(newsArticle)
@@ -82,9 +44,9 @@ public class NewsArticleQueryRepository {
   }
 
 
-  private List<ArticleDto> fetchArticles(CursorPageArticleRequest request, Long userId) {
+  public List<ArticleProjection> fetchArticles(CursorPageArticleRequest request, Long userId) {
     return queryFactory
-        .select(new QArticleDto(
+        .select(new QArticleProjection(
             newsArticle.id,
             newsArticle.sourceName,
             newsArticle.link,
@@ -97,7 +59,8 @@ public class NewsArticleQueryRepository {
                 .from(articleView)
                 .where(articleView.id.articleId.eq(newsArticle.id)
                     .and(articleView.id.viewerId.eq(userId)))
-                .exists()
+                .exists(),
+            newsArticle.createdAt
         ))
         .from(newsArticle)
         .join(newsArticleMetric).on(newsArticle.id.eq(newsArticleMetric.id))
@@ -145,18 +108,18 @@ public class NewsArticleQueryRepository {
 
     if (from != null) {
       Instant kstStart = from
-              .toLocalDate()
-              .atStartOfDay(KST)
-              .toInstant();
+          .toLocalDate()
+          .atStartOfDay(KST)
+          .toInstant();
       condition = newsArticle.publishedAt.goe(kstStart);
     }
 
     if (to != null) {
       Instant kstEnd = to
-              .toLocalDate()
-              .plusDays(1)
-              .atStartOfDay(KST)
-              .toInstant();
+          .toLocalDate()
+          .plusDays(1)
+          .atStartOfDay(KST)
+          .toInstant();
       BooleanExpression toCondition = newsArticle.publishedAt.lt(kstEnd);
 
       condition = (condition == null) ? toCondition : condition.and(toCondition);
@@ -175,10 +138,15 @@ public class NewsArticleQueryRepository {
 
     switch (request.getOrderByWithDefault()) {
       case "publishdate":
+        Instant cursorPublishedAt = Instant.parse(request.cursor());
         if ("desc".equals(direction)) {
-          return newsArticle.publishedAt.lt(after);
+          return newsArticle.publishedAt.lt(cursorPublishedAt)
+              .or(newsArticle.publishedAt.eq(cursorPublishedAt)
+                  .and(newsArticle.createdAt.lt(after)));
         } else {
-          return newsArticle.publishedAt.gt(after);
+          return newsArticle.publishedAt.gt(cursorPublishedAt)
+              .or(newsArticle.publishedAt.eq(cursorPublishedAt)
+                  .and(newsArticle.createdAt.lt(after)));
         }
 
       case "commentcount":
@@ -186,11 +154,11 @@ public class NewsArticleQueryRepository {
         if ("desc".equals(direction)) {
           return newsArticleMetric.commentCount.lt(commentCount)
               .or(newsArticleMetric.commentCount.eq(commentCount)
-                  .and(newsArticle.publishedAt.lt(after)));
+                  .and(newsArticle.createdAt.lt(after)));
         } else {
           return newsArticleMetric.commentCount.gt(commentCount)
               .or(newsArticleMetric.commentCount.eq(commentCount)
-                  .and(newsArticle.publishedAt.lt(after)));
+                  .and(newsArticle.createdAt.lt(after)));
         }
 
       case "viewcount":
@@ -198,11 +166,11 @@ public class NewsArticleQueryRepository {
         if ("desc".equals(direction)) {
           return newsArticleMetric.viewCount.lt(viewCount)
               .or(newsArticleMetric.viewCount.eq(viewCount)
-                  .and(newsArticle.publishedAt.lt(after)));
+                  .and(newsArticle.createdAt.lt(after)));
         } else {
           return newsArticleMetric.viewCount.gt(viewCount)
               .or(newsArticleMetric.viewCount.eq(viewCount)
-                  .and(newsArticle.publishedAt.lt(after)));
+                  .and(newsArticle.createdAt.lt(after)));
         }
 
       default:
@@ -217,17 +185,16 @@ public class NewsArticleQueryRepository {
     switch (request.getOrderByWithDefault()) {
       case "commentcount":
         specifiers.add(new OrderSpecifier<>(direction, newsArticleMetric.commentCount));
-        specifiers.add(new OrderSpecifier<>(Order.DESC, newsArticle.publishedAt));
         break;
       case "viewcount":
         specifiers.add(new OrderSpecifier<>(direction, newsArticleMetric.viewCount));
-        specifiers.add(new OrderSpecifier<>(Order.DESC, newsArticle.publishedAt));
         break;
       default:
         specifiers.add(new OrderSpecifier<>(direction, newsArticle.publishedAt));
     }
 
-    specifiers.add(new OrderSpecifier<>(direction, newsArticle.id));
+    specifiers.add(new OrderSpecifier<>(Order.DESC, newsArticle.createdAt));
+    specifiers.add(new OrderSpecifier<>(Order.DESC, newsArticle.id));
 
     return specifiers.toArray(new OrderSpecifier[0]);
   }

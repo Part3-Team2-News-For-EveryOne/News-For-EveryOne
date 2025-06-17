@@ -1,6 +1,6 @@
 package com.example.newsforeveryone.newsarticle.dto;
 
-import com.querydsl.core.annotations.QueryProjection;
+import com.example.newsforeveryone.newsarticle.repository.projection.ArticleProjection;
 import java.time.Instant;
 
 public record ArticleDto(
@@ -12,8 +12,21 @@ public record ArticleDto(
     String summary,
     Long commentCount,
     Long viewCount,
-    Boolean viewedByMe
+    Boolean viewedByMe,
+    Instant createdAt
 ) {
-  @QueryProjection
-  public ArticleDto {}
+  public static ArticleDto from(ArticleProjection p) {
+    return new ArticleDto(
+        p.id(),
+        p.source(),
+        p.sourceUrl(),
+        p.title(),
+        p.publishDate(),
+        p.summary(),
+        p.commentCount(),
+        p.viewCount(),
+        p.viewedByMe(),
+        p.createdAt()
+    );
+  }
 }
