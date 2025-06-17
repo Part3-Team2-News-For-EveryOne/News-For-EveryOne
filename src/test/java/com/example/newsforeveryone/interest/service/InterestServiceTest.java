@@ -1,7 +1,5 @@
 package com.example.newsforeveryone.interest.service;
 
-import com.example.newsforeveryone.interest.repository.InterestRepository;
-import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.dto.InterestResult;
 import com.example.newsforeveryone.interest.dto.SubscriptionResult;
 import com.example.newsforeveryone.interest.dto.request.InterestRegisterRequest;
@@ -14,13 +12,26 @@ import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.interest.entity.id.SubscriptionId;
 import com.example.newsforeveryone.interest.exception.InterestNotFoundException;
 import com.example.newsforeveryone.interest.repository.InterestKeywordRepository;
+import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.KeywordRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
+import com.example.newsforeveryone.newsarticle.entity.ArticleInterest;
+import com.example.newsforeveryone.newsarticle.entity.ArticleInterestId;
+import com.example.newsforeveryone.newsarticle.entity.NewsArticle;
+import com.example.newsforeveryone.newsarticle.repository.ArticleInterestRepository;
+import com.example.newsforeveryone.newsarticle.repository.NewsArticleRepository;
+import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.exception.UserNotFoundException;
 import com.example.newsforeveryone.user.repository.UserRepository;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,11 +39,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Stream;
 
 class InterestServiceTest extends IntegrationTestSupport {
 
@@ -48,6 +54,10 @@ class InterestServiceTest extends IntegrationTestSupport {
   private InterestService interestService;
   @Autowired
   private UserRepository userRepository;
+  @Autowired
+  private NewsArticleRepository newsArticleRepository;
+  @Autowired
+  private ArticleInterestRepository articleInterestRepository;
 
   @Transactional
   @DisplayName("관심사와 키워드를 입력할 경우, 관심사를 등록할 수 있습니다.")
@@ -226,7 +236,10 @@ class InterestServiceTest extends IntegrationTestSupport {
   void deleteInterest() {
     // given
     User savedUser = userRepository.save(new User("", "", ""));
+    NewsArticle newsArticle = saveNewsArticle("hello");
     Interest savedInterest = saveInterestAndKeyword("러닝머신", List.of("중랑천"));
+    articleInterestRepository.save(
+        new ArticleInterest(new ArticleInterestId(newsArticle.getId(), savedInterest.getId())));
     interestService.subscribeInterest(savedInterest.getId(), savedUser.getId());
 
     // when
@@ -311,6 +324,20 @@ class InterestServiceTest extends IntegrationTestSupport {
     interestKeywordRepository.saveAll(nextInterestKeywords);
 
     return savedNextInterest;
+  }
+
+  @NotNull
+  private NewsArticle saveNewsArticle(String link) {
+    NewsArticle newsArticle = NewsArticle.builder()
+        .interestIds(null)
+        .title("")
+        .summary("")
+        .link(link)
+        .sourceName("")
+        .publishedAt(Instant.now())
+        .build();
+
+    return newsArticleRepository.save(newsArticle);
   }
 
 }
