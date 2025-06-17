@@ -3,6 +3,7 @@ package com.example.newsforeveryone.newsarticle.service;
 import com.example.newsforeveryone.comment.repository.CommentRepository;
 import com.example.newsforeveryone.common.exception.BaseException;
 import com.example.newsforeveryone.common.exception.ErrorCode;
+import com.example.newsforeveryone.newsarticle.dto.ArticleDto;
 import com.example.newsforeveryone.newsarticle.dto.ArticleRestoreResultDto;
 import com.example.newsforeveryone.newsarticle.dto.ArticleViewDto;
 import com.example.newsforeveryone.newsarticle.dto.CursorPageArticleRequest;
@@ -77,7 +78,38 @@ public class NewsArticleServiceImpl implements NewsArticleService {
   @Override
   public CursorPageResponseArticleDto findArticlePage(CursorPageArticleRequest articleRequest,
       Long userId) {
-    return newsArticleQueryRepository.findArticlePage(articleRequest, userId);
+    List<ArticleDto> content = newsArticleQueryRepository.fetchArticles(articleRequest, userId)
+        .stream().map(ArticleDto::from).collect(Collectors.toCollection(ArrayList::new));
+    Long totalElements = newsArticleQueryRepository.fetchTotalCount(articleRequest);
+
+    boolean hasNext = content.size() > articleRequest.limit();
+    if (hasNext) {
+      content.remove(articleRequest.limit().intValue());
+    }
+
+    String nextCursor = null;
+    Instant nextAfter = null;
+    if (hasNext && !content.isEmpty()) {
+      ArticleDto lastArticle = content.get(content.size() - 1);
+      String orderBy = articleRequest.getOrderByWithDefault();
+
+      nextAfter = lastArticle.createdAt();
+
+      nextCursor = switch (orderBy) {
+        case "commentcount" -> lastArticle.commentCount().toString();
+        case "viewcount" -> lastArticle.viewCount().toString();
+        default -> lastArticle.publishDate().toString();
+      };
+    }
+
+    return new CursorPageResponseArticleDto(
+        content,
+        nextCursor,
+        nextAfter,
+        50,
+        totalElements,
+        hasNext
+    );
   }
 
   @Override
