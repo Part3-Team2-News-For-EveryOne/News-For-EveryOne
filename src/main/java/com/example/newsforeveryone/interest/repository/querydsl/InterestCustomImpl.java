@@ -6,11 +6,9 @@ import com.example.newsforeveryone.interest.entity.QInterestKeyword;
 import com.example.newsforeveryone.interest.entity.QKeyword;
 import com.example.newsforeveryone.interest.repository.querydsl.condition.InterestCursorConditionBuilder;
 import com.example.newsforeveryone.interest.repository.querydsl.condition.InterestOrderSpecifier;
-import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -40,29 +38,21 @@ public class InterestCustomImpl implements InterestCustom {
   ) {
 
     boolean isAsc = isAsc(direction);
-    BooleanExpression interestMatchesKeywordOrName = interestMatchesKeywordOrName(searchWord);
-    BooleanExpression cursorCondition = interestCursorConditionBuilder.cursorCondition(cursor,
-        after, orderBy, isAsc);
-    OrderSpecifier<?> primaryOrder = interestOrderSpecifier.getSubscriberCountPrimaryOrder(
-        orderBy, isAsc);
-    OrderSpecifier<Instant> secondaryOrder = interestOrderSpecifier.getOrderSpecifier(isAsc,
-        interest.createdAt);
-
     List<Interest> interests = queryFactory
         .select(interest)
         .from(interest)
-        .where(interestMatchesKeywordOrName.and(cursorCondition))
-        .orderBy(primaryOrder, secondaryOrder)
+        .where(
+            interestMatchesKeywordOrName(searchWord)
+                .and(interestCursorConditionBuilder.cursorCondition(cursor, after, orderBy, isAsc))
+        )
+        .orderBy(
+            interestOrderSpecifier.getSubscriberCountPrimaryOrder(orderBy, isAsc),
+            interestOrderSpecifier.getOrderSpecifier(isAsc, interest.createdAt)
+        )
         .limit(limit + 1)
         .fetch();
 
     return toCustomSlice(limit, interests);
-  }
-
-  private SliceImpl<Interest> toCustomSlice(Integer limit, List<Interest> interests) {
-    boolean hasNext = interests.size() > limit;
-    List<Interest> slicedInterests = getSlicedInterest(interests, hasNext, limit);
-    return new SliceImpl<>(slicedInterests, PageRequest.of(0, limit), hasNext);
   }
 
   private boolean isAsc(String direction) {
@@ -82,6 +72,12 @@ public class InterestCustomImpl implements InterestCustom {
     ).or(
         interest.name.containsIgnoreCase(word)
     );
+  }
+
+  private SliceImpl<Interest> toCustomSlice(Integer limit, List<Interest> interests) {
+    boolean hasNext = interests.size() > limit;
+    List<Interest> slicedInterests = getSlicedInterest(interests, hasNext, limit);
+    return new SliceImpl<>(slicedInterests, PageRequest.of(0, limit), hasNext);
   }
 
   private List<Interest> getSlicedInterest(List<Interest> interests, boolean hasNext, int limit) {
