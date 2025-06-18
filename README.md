@@ -19,9 +19,9 @@
 |-----------|---------------------------|
 | [황지환(팀장)] |  |
 | [김보경](https://github.com/BokyungKim-SPRING)     | • 사용자 관리 도메인 설계 및 기능 구현<br> • Spring Security를 통한 세션 인증 구현<br> • Comment / CommentLike 도메인 설계 및 기능 구현<br>• 댓글 목록 커서 페이지네이션 구현<br> |
-| [한상엽]     |  |
-| [강지훈]     |   |
-| [윤영로]     |   |
+| [한상엽]     | 	• 뉴스 기사 수집 도메인 설계 및 기능 구현<br> • Spring Batch 기반 Naver Open API 및 RSS 기사 수집 구현 <br> • 뉴스 기사 백업 및 복구 기능 개발 (AWS S3 연동) |
+| [강지훈](https://github.com/homeA90)     |  • 뉴스 기사 수집 도메인 설계 및 기능 구현<br> • Spring Batch 기반 Naver Open API 및 RSS 기사 수집 구현 <br> • 뉴스 기사 백업 및 복구 기능 개발 (AWS S3 연동) <br> • CI/CD 파이프라인 구축 |
+| [윤영로]     |  • 뉴스 기사 수집 도메인 설계 및 기능 구현<br> • Spring Batch 기반 Naver Open API 및 RSS 기사 수집 구현 <br> • 뉴스 사 백업 및 복구 기능 개발 (AWS S3 연동) |
 
 ## 🏫 주요 기능
 
@@ -34,7 +34,11 @@
 ### 관심사 관리
 
 ### 뉴스 기사 관리
-
+- Naver: Open API, 한국경제, 조선일보, 연합뉴스: RSS Feed 기반 수집
+- Spring Batch를 이용하여 Chunk 단위 처리로 대용량 데이터 효율적으로 수집
+- 정렬 및 커서 페이지네이션을 이용한 검색 및 조회 기능
+- 뉴스 백업 및 복구 기능
+  
 ### 댓글 관리
 - 기사별 댓글 등록, 수정, 삭제
 - 댓글 좋아요 등록 및 취소
