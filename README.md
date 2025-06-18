@@ -19,7 +19,7 @@
 |-----------|---------------------------|
 | [황지환(팀장)] |  |
 | [김보경](https://github.com/BokyungKim-SPRING)     | • 사용자 관리 도메인 설계 및 기능 구현<br> • Spring Security를 통한 세션 인증 구현<br> • Comment / CommentLike 도메인 설계 및 기능 구현<br>• 댓글 목록 커서 페이지네이션 구현<br> |
-| [한상엽](https://github.com/sangyeobhan)     | 	• 뉴스 기사 수집 도메인 설계 및 기능 구현<br> • Spring Batch 기반 Naver Open API 및 RSS 기사 수집 구현 <br> • 뉴스 기사 백업 및 복구 기능 개발 (AWS S3 연동) |
+| [한상엽](https://github.com/sangyeobhan)     | 	• 뉴스 기사 수집 도메인 설계 및 기능 구현<br> • Spring Batch 기반 Naver Open API 및 RSS 기사 수집 구현 <br> • 뉴스 기사 백업 및 복구 기능 개발 (AWS S3 연동)<br> • 사용자 활동 내역 조회 기능 구현|
 | [강지훈](https://github.com/homeA90)     |  • 뉴스 기사 수집 도메인 설계 및 기능 구현<br> • Spring Batch 기반 Naver Open API 및 RSS 기사 수집 구현 <br> • 뉴스 기사 백업 및 복구 기능 개발 (AWS S3 연동) <br> • CI/CD 파이프라인 구축 |
 | [윤영로](https://github.com/yun0ro)     |  • 뉴스 기사 수집 도메인 설계 및 기능 구현<br> • Spring Batch 기반 Naver Open API 및 RSS 기사 수집 구현 <br> • 뉴스 사 백업 및 복구 기능 개발 (AWS S3 연동) |
 
@@ -46,7 +46,8 @@
 - 댓글 작성/수정/삭제 시 사용자 활동 내역과 연동
 
 ### 활동 내역 관리
-
+- 사용자 활동 내역 조회
+  - 구독 중인 관심사, 최근 작성한 댓글, 최근 좋아요 누른 댓글, 최근 본 뉴스 기사
 ### 알림 관리
 
 ### 🫙 ERD
