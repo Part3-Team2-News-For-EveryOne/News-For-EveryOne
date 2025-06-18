@@ -26,23 +26,19 @@ public class KeywordService {
     List<Keyword> newKeywords = new ArrayList<>();
     JaroWinklerSimilarity jaroWinklerSimilarity = new JaroWinklerSimilarity();
     for (String keyword : requestKeywords) {
-      Optional<Keyword> maxSimilarityKeyword = keywordRepository.findMaxSimilarityKeywordOverThreshold(
-          keyword, threshold);
+      Optional<Keyword> mostSimilarityKeyword = keywordRepository.findMostSimilarityKeyword(
+          keyword);
       filterWordIsPresent(threshold, savedKeyWords, newKeywords, jaroWinklerSimilarity, keyword,
-          maxSimilarityKeyword);
-      filterWordIsEmpty(newKeywords, keyword, maxSimilarityKeyword);
+          mostSimilarityKeyword);
+
+      if (mostSimilarityKeyword.isEmpty()) {
+        newKeywords.add(new Keyword(keyword));
+      }
     }
     List<Keyword> savedNewKeywords = keywordRepository.saveAll(newKeywords);
     savedKeyWords.addAll(savedNewKeywords);
 
     return savedKeyWords;
-  }
-
-  private void filterWordIsEmpty(List<Keyword> newKeywords, String keyword,
-      Optional<Keyword> maxSimilarityKeyword) {
-    if (maxSimilarityKeyword.isEmpty()) {
-      newKeywords.add(new Keyword(keyword));
-    }
   }
 
   private void filterWordIsPresent(double threshold, List<Keyword> savedKeyWords,

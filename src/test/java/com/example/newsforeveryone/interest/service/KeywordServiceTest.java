@@ -1,10 +1,11 @@
 package com.example.newsforeveryone.interest.service;
 
-import com.example.newsforeveryone.interest.exception.InterestKeywordMissingException;
-import com.example.newsforeveryone.support.IntegrationTestSupport;
 import com.example.newsforeveryone.interest.entity.Keyword;
+import com.example.newsforeveryone.interest.exception.InterestKeywordMissingException;
 import com.example.newsforeveryone.interest.repository.KeywordRepository;
 import com.example.newsforeveryone.interest.service.impl.KeywordService;
+import com.example.newsforeveryone.support.IntegrationTestSupport;
+import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
@@ -13,8 +14,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 class KeywordServiceTest extends IntegrationTestSupport {
 
@@ -25,7 +24,7 @@ class KeywordServiceTest extends IntegrationTestSupport {
   private KeywordService keywordService;
 
   @Transactional
-  @DisplayName("키워드를 등록할 때, 유사도가 설정한 임계치보다 낮으면 키워드를 새로 저장하고, 보다 높으면 기존 키워드를 반환합니다.")
+  @DisplayName("유사한 키워드가 없으면 새로운 키워드를 저장하고, 있으면 기존 키워드를 반환합니다")
   @Test
   void registerKeyword() {
     // given
@@ -37,10 +36,10 @@ class KeywordServiceTest extends IntegrationTestSupport {
 
     // then
     SoftAssertions.assertSoftly(softly -> {
-      softly.assertThat(keywordRepository.findAll()).hasSize(3);
+      softly.assertThat(keywordRepository.findAll()).hasSize(2);
       softly.assertThat(registeredKeywords)
           .extracting(Keyword::getName)
-          .containsExactlyInAnyOrder("테스트", "중랑");
+          .containsExactlyInAnyOrder("테스타", "중랑");
     });
   }
 

@@ -5,6 +5,7 @@ import com.example.newsforeveryone.interest.exception.InterestAlreadyExistExcept
 import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.service.WordSimilarityService;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,11 @@ public class WordSimilarityServiceImpl implements WordSimilarityService {
   @Override
   public void validateSimilarity(String word, double threshold) {
     JaroWinklerSimilarity jw = new JaroWinklerSimilarity();
-    Interest mostSimilarInterest = interestRepository.findMostSimilarInterest(word);
-    double similarity = jw.apply(word, mostSimilarInterest.getName());
+    Optional<Interest> mostSimilarInterest = interestRepository.findMostSimilarInterest(word);
+    if (mostSimilarInterest.isEmpty()) {
+      return;
+    }
+    double similarity = jw.apply(word, mostSimilarInterest.get().getName());
     if (similarity < threshold) {
       return;
     }

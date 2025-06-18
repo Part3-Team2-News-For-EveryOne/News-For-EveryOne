@@ -83,7 +83,7 @@ class InterestServiceTest extends IntegrationTestSupport {
   }
 
   @Transactional
-  @DisplayName("관심사와 키워드로 조회하면, 부분적으로 일치하는 데이터를 반환합니다.")
+  @DisplayName("관심사와 키워드로 조회하면, 키워드를 포함하는 데이터를 반환합니다.")
   @MethodSource("provideInterestSearchArguments")
   @ParameterizedTest
   void getInterests_SearchInterestAndKeyWord_Parameterized(int limit, boolean expectedHasNext,
