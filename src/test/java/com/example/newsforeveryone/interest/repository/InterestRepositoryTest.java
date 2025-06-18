@@ -5,6 +5,7 @@ import com.example.newsforeveryone.interest.entity.InterestKeyword;
 import com.example.newsforeveryone.interest.entity.Keyword;
 import com.example.newsforeveryone.support.IntegrationTestSupport;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +29,7 @@ class InterestRepositoryTest extends IntegrationTestSupport {
 
 
   @Transactional
-  @DisplayName("검색 조건에 따라 요청된 양의 데이터를 가져옵니다.")
+  @DisplayName("검색 조건에 따라 요청된 양의 관심사를 반환합니다.")
   @MethodSource("provideSearchConditions")
   @ParameterizedTest
   void searchInterestByWordWithCursor(String searchWord, String orderBy, String direction,
@@ -70,33 +71,39 @@ class InterestRepositoryTest extends IntegrationTestSupport {
   }
 
   @Transactional
-  @DisplayName("임계치이상, 가장 높은 유사도를 반환합니다.")
+  @DisplayName("가장 높은 유사도를 가진 단어를 반환합니다.")
   @Test
-  void test_TopSimilarity() {
+  void test_TopSimilarityWord() {
     // given
-    interestRepository.save(new Interest("대한민국서울이화교중랑천산책로"));
-    String targetName = "대한민국서울이화교중랑천산책";
+    interestRepository.save(new Interest("유사도검사테스타"));
+    Interest interest = interestRepository.save(new Interest("대한민국서울이화교중랑천산책로"));
+    String searchName = "대한민국서울이화교중랑천산책";
 
     // when
-    Double maxSimilarity = interestRepository.findMaxSimilarity(targetName);
+    Optional<Interest> mostSimilarInterest = interestRepository.findMostSimilarInterest(
+        searchName);
 
     // then
-    Assertions.assertThat(maxSimilarity).isGreaterThanOrEqualTo(0.8);
+    Assertions.assertThat(mostSimilarInterest)
+        .isPresent()
+        .get()
+        .extracting(Interest::getName)
+        .isEqualTo(interest.getName());
   }
 
   @Transactional
-  @DisplayName("임계치미만, 가장 높은 유사도를 반환합니다.")
+  @DisplayName("가장 뫂은 유사도의 데이터를 비교할떄, DB에 비교할 데이터가 없을 경우 null을 반환합니다.")
   @Test
-  void test_UnderThreshold() {
+  void test_TopSimilarityWord_NoData() {
     // given
-    interestRepository.save(new Interest("대한민국서울이화교중랑천산책로"));
-    String targetName = "대한민국서울이화교중랑천산책길";
+    String targetName = "대한민국서울이화교중랑천산책";
 
     // when
-    Double maxSimilarity = interestRepository.findMaxSimilarity(targetName);
+    Optional<Interest> mostSimilarInterest = interestRepository.findMostSimilarInterest(
+        targetName);
 
     // then
-    Assertions.assertThat(maxSimilarity).isLessThan(0.8);
+    Assertions.assertThat(mostSimilarInterest).isEmpty();
   }
 
   private String getAfter(String after, Interest savedFirstInterest) {

@@ -9,15 +9,18 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ArticleInterestRepository extends JpaRepository<ArticleInterest, Long> {
+
   @Query("""
-    SELECT ai.id
-    FROM ArticleInterest ai
-    WHERE ai.id.articleId IN (
-        SELECT a.id
-        FROM NewsArticle a
-        WHERE a.createdAt > :since
-    )
-  """)
+        SELECT ai.id
+        FROM ArticleInterest ai
+        WHERE ai.id.articleId IN (
+            SELECT a.id
+            FROM NewsArticle a
+            WHERE a.createdAt > :since
+        )
+      """)
   List<ArticleInterestId> findIdsByCreatedAtAfter(@Param("since") Instant since);
+
+  void deleteAllById_InterestId(Long interestId);
 
 }

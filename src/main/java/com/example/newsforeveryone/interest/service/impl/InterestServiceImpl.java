@@ -19,6 +19,7 @@ import com.example.newsforeveryone.interest.repository.InterestRepository;
 import com.example.newsforeveryone.interest.repository.SubscriptionRepository;
 import com.example.newsforeveryone.interest.service.InterestService;
 import com.example.newsforeveryone.interest.service.WordSimilarityService;
+import com.example.newsforeveryone.newsarticle.repository.ArticleInterestRepository;
 import com.example.newsforeveryone.user.entity.User;
 import com.example.newsforeveryone.user.exception.UserNotFoundException;
 import com.example.newsforeveryone.user.repository.UserRepository;
@@ -42,6 +43,7 @@ public class InterestServiceImpl implements InterestService {
   private final SubscriptionRepository subscriptionRepository;
   private final InterestMapper interestMapper;
   private final SubscriptionMapper subscriptionMapper;
+  private final ArticleInterestRepository articleInterestRepository;
 
   @Transactional
   @Override
@@ -106,6 +108,7 @@ public class InterestServiceImpl implements InterestService {
   public void deleteInterest(long interestId) {
     validateInterestExists(interestId);
 
+    articleInterestRepository.deleteAllById_InterestId(interestId);
     interestKeywordRepository.deleteByInterest_Id(interestId);
     subscriptionRepository.deleteByInterest_Id(interestId);
     interestRepository.deleteById(interestId);
