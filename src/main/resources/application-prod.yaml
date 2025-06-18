@@ -12,6 +12,7 @@ spring:
       idle-timeout: 300000            # 5분 (풀 내 비활성 커넥션 타임아웃)
       connection-timeout: 30000       # 커넥션 획득 최대 대기시간 (30초)
       max-lifetime: 1800000           # 커넥션 최대 수명 (30분)0
+      leak-detection-threshold: 20000
   jpa:
     show-sql: false
     properties:
@@ -32,3 +33,26 @@ logging:
     org.hibernate.SQL: warn
     org.hibernate.type.descriptor.sql.BasicBinder: error
     com.example.newsforeveryone: info
+
+
+server:
+  tomcat:
+    mbeanregistry:
+      enabled: true
+management:
+  metrics:
+    export:
+      cloudwatch:
+        enabled: true
+        namespace: MyAppJVM  # CloudWatch 내 분류 이름
+        step: 1m             # [⚠️중요] 전송 주기 - 1분 이상 권장
+        batch-size: 20       # 기본값은 20, 상황에 따라 조절 가능
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus  # 필요에 따라 조정
+  endpoint:
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: false
